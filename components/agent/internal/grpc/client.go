@@ -241,30 +241,32 @@ func (client *client) Start(ctx context.Context) error {
 				sharedlogging.FromContext(ctx).Errorf("Unable to send stack status to server: %s", err)
 			}
 
-			if err := client.connectClient.SendMsg(&generated.Order_ExistingStack{
-				ExistingStack: &generated.Stack{
-					ClusterName: stack.Name,
-					Seed:        stack.Spec.Seed,
-					AuthConfig: &generated.AuthConfig{
-						Issuer:       stack.Spec.Auth.DelegatedOIDCServer.Issuer,
-						ClientId:     stack.Spec.Auth.DelegatedOIDCServer.ClientID,
-						ClientSecret: stack.Spec.Auth.DelegatedOIDCServer.ClientSecret,
-					},
-					StaticClients: []*generated.AuthClient{{ // Need to loop
-						Public: true,
-						Id:     "fctl",
-					}},
-					StargateConfig: &generated.StargateConfig{
-						Enabled: func() bool {
-							if stack.Spec.Stargate == nil {
-								return false
-							}
+			if err := client.connectClient.SendMsg(&generated.Message{
+				Message: &generated.Message_ExistingStack{
+					ExistingStack: &generated.Stack{
+						ClusterName: stack.Name,
+						Seed:        stack.Spec.Seed,
+						AuthConfig: &generated.AuthConfig{
+							Issuer:       stack.Spec.Auth.DelegatedOIDCServer.Issuer,
+							ClientId:     stack.Spec.Auth.DelegatedOIDCServer.ClientID,
+							ClientSecret: stack.Spec.Auth.DelegatedOIDCServer.ClientSecret,
+						},
+						StaticClients: []*generated.AuthClient{{ // Need to loop
+							Public: true,
+							Id:     "fctl",
+						}},
+						StargateConfig: &generated.StargateConfig{
+							Enabled: func() bool {
+								if stack.Spec.Stargate == nil {
+									return false
+								}
 
-							return stack.Spec.Stargate.StargateServerURL != ""
-						}(),
-						Url: stack.Spec.Stargate.StargateServerURL,
+								return stack.Spec.Stargate.StargateServerURL != ""
+							}(),
+							Url: stack.Spec.Stargate.StargateServerURL,
+						},
+						Disabled: stack.Spec.Disabled,
 					},
-					Disabled: stack.Spec.Disabled,
 				},
 			}); err != nil {
 				sharedlogging.FromContext(ctx).Errorf("Unable to send Order_ExistingStack to control plane: %s", err)
