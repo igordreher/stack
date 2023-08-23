@@ -240,6 +240,37 @@ func (client *client) Start(ctx context.Context) error {
 			}); err != nil {
 				sharedlogging.FromContext(ctx).Errorf("Unable to send stack status to server: %s", err)
 			}
+
+			if err := client.connectClient.SendMsg(&generated.Order_ExistingStack{
+				ExistingStack: &generated.Stack{
+					ClusterName: stack.Name,
+					Seed:        stack.Spec.Seed,
+					AuthConfig: &generated.AuthConfig{
+						Issuer:       stack.Spec.Auth.DelegatedOIDCServer.Issuer,
+						ClientId:     stack.Spec.Auth.DelegatedOIDCServer.ClientID,
+						ClientSecret: stack.Spec.Auth.DelegatedOIDCServer.ClientSecret,
+					},
+					StaticClients: []*generated.AuthClient{{ // Neet to loop
+						Public: true,
+						Id:     "fctl",
+					}},
+					StargateConfig: &generated.StargateConfig{
+						Enabled: func() bool {
+							if stack.Spec.Stargate == nil {
+								return false
+							}
+
+							return stack.Spec.Stargate.StargateServerURL != ""
+						}(),
+						Url: stack.Spec.Stargate.StargateServerURL,
+					},
+					Disabled: stack.Spec.Disabled,
+				},
+			}); err != nil {
+				sharedlogging.FromContext(ctx).Errorf("Unable to send Order_ExistingStack to control plane: %s", err)
+			}
+
+			sharedlogging.FromContext(ctx).Infof("Stack %s updated control plane side", stack.Name)
 		case msg := <-msgs:
 			switch msg := msg.Message.(type) {
 			// TODO: Implement UpdateOrCreate
@@ -264,6 +295,7 @@ func (client *client) Start(ctx context.Context) error {
 					sharedlogging.FromContext(ctx).Errorf("Updating stack cluster side: %s", err)
 					continue
 				}
+
 				sharedlogging.FromContext(ctx).Infof("Stack %s updated", newStack.Name)
 
 			case *generated.Order_DeletedStack:
