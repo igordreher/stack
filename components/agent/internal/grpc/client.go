@@ -250,7 +250,7 @@ func (client *client) Start(ctx context.Context) error {
 						ClientId:     stack.Spec.Auth.DelegatedOIDCServer.ClientID,
 						ClientSecret: stack.Spec.Auth.DelegatedOIDCServer.ClientSecret,
 					},
-					StaticClients: []*generated.AuthClient{{ // Neet to loop
+					StaticClients: []*generated.AuthClient{{ // Need to loop
 						Public: true,
 						Id:     "fctl",
 					}},
