@@ -242,6 +242,8 @@ func (client *client) Start(ctx context.Context) error {
 				sharedlogging.FromContext(ctx).Errorf("Unable to send stack status to server: %s", err)
 			}
 
+			sharedlogging.FromContext(ctx).Infof("Existing stack: %s", stack.Name)
+
 			if err := client.connectClient.SendMsg(&generated.Message{
 				Message: &generated.Message_ExistingStack{
 					ExistingStack: &generated.Stack{
