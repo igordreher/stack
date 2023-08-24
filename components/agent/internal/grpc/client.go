@@ -15,6 +15,7 @@ import (
 	oidcclient "github.com/zitadel/oidc/v2/pkg/client"
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	controllererrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -266,6 +267,13 @@ func (client *client) Start(ctx context.Context) error {
 							Url: stack.Spec.Stargate.StargateServerURL,
 						},
 						Disabled: stack.Spec.Disabled,
+						DeletedAt: func() *timestamppb.Timestamp {
+							if stack.DeletionTimestamp.IsZero() {
+								return nil
+							}
+
+							return timestamppb.New(stack.DeletionTimestamp.Time)
+						}(),
 					},
 				},
 			}); err != nil {
