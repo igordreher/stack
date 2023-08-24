@@ -95,4 +95,5 @@ message AuthConfig {
 message AuthClient {
   bool public = 1;
   string id = 2;
+  repeated string secrets = 3;
 }

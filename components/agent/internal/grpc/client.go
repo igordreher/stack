@@ -244,20 +244,19 @@ func (client *client) Start(ctx context.Context) error {
 
 			sharedlogging.FromContext(ctx).Infof("Existing stack: %s", stack.Name)
 
+			staticAuthClient := mapStaticClientToGRPC(stack.Spec.Auth.StaticClients...)
+
 			if err := client.connectClient.SendMsg(&generated.Message{
 				Message: &generated.Message_ExistingStack{
 					ExistingStack: &generated.Stack{
 						ClusterName: stack.Name,
 						Seed:        stack.Spec.Seed,
 						AuthConfig: &generated.AuthConfig{
-							Issuer:       stack.Spec.Auth.DelegatedOIDCServer.Issuer,
+							Issuer:       stack.Spec.Auth.DelegatedOIDCServer.Issuer, // This sould never change
 							ClientId:     stack.Spec.Auth.DelegatedOIDCServer.ClientID,
 							ClientSecret: stack.Spec.Auth.DelegatedOIDCServer.ClientSecret,
 						},
-						StaticClients: []*generated.AuthClient{{ // Need to loop
-							Public: true,
-							Id:     "fctl",
-						}},
+						StaticClients: staticAuthClient,
 						StargateConfig: &generated.StargateConfig{
 							Enabled: func() bool {
 								if stack.Spec.Stargate == nil {
@@ -266,7 +265,13 @@ func (client *client) Start(ctx context.Context) error {
 
 								return stack.Spec.Stargate.StargateServerURL != ""
 							}(),
-							Url: stack.Spec.Stargate.StargateServerURL,
+							Url: func() string {
+								if stack.Spec.Stargate == nil {
+									return ""
+								}
+
+								return stack.Spec.Stargate.StargateServerURL
+							}(),
 						},
 						Disabled: stack.Spec.Disabled,
 						DeletedAt: func() *timestamppb.Timestamp {
@@ -360,6 +365,19 @@ func (client *client) Start(ctx context.Context) error {
 		}
 	}
 }
+func mapStaticClientToGRPC(clients ...v1beta3.StaticClient) []*generated.AuthClient {
+
+	messageClients := make([]*generated.AuthClient, 0)
+	for _, cli := range clients {
+		messageClients = append(messageClients, &generated.AuthClient{
+			Public:  cli.Public,
+			Id:      cli.ID,
+			Secrets: cli.Secrets,
+		})
+	}
+
+	return messageClients
+}
 
 func (client *client) Stop(ctx context.Context) error {
 	ch := make(chan error)
@@ -375,7 +393,6 @@ func (client *client) Stop(ctx context.Context) error {
 		}
 	}
 }
-
 func newClient(id string, grpcClient generated.ServerClient, k8sClient K8SClient,
 	baseUrl *url.URL, authenticator Authenticator, production bool) *client {
 	return &client{
