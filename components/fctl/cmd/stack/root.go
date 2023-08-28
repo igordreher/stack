@@ -2,8 +2,21 @@ package stack
 
 import (
 	fctl "github.com/formancehq/fctl/pkg"
+	"github.com/formancehq/fctl/pkg/config"
 	"github.com/spf13/cobra"
 )
+
+func NewNodeController() *config.Node {
+	return config.NewConfigNode(*config.NewControllerConfig(
+		"stack",
+		"Manage your stack",
+		"stacks",
+		[]string{"stack", "stacks", "st"},
+		nil,
+	),
+		NewListController(NewListControllerConfig()),
+	)
+}
 
 func NewCommand() *cobra.Command {
 	return fctl.NewCommand("stack",
@@ -16,6 +29,6 @@ func NewCommand() *cobra.Command {
 			NewShowCommand(),
 			NewRestoreStackCommand(),
 		),
-		fctl.WithCommandScopesFlags(fctl.Organization),
+		fctl.WithCommandScopesFlags(config.Organization),
 	)
 }

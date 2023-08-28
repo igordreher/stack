@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"net/http"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/formancehq/fctl/pkg/config"
+
 	"github.com/formancehq/fctl/cmd/stack/internal"
 	"github.com/formancehq/fctl/membershipclient"
 	fctl "github.com/formancehq/fctl/pkg"
@@ -34,13 +37,13 @@ func NewCreateStore() *CreateStore {
 	}
 }
 
-func NewStackConfig() *fctl.ControllerConfig {
+func NewStackConfig() *config.ControllerConfig {
 	flags := flag.NewFlagSet(useCreate, flag.ExitOnError)
 	flags.Bool(unprotectFlag, false, "Unprotect stacks (no confirmation on write commands)")
 	flags.String(regionFlag, "", "Region on which deploy the stack")
 	flags.Bool(nowaitFlag, false, "Not wait stack availability")
 
-	return fctl.NewControllerConfig(
+	return config.NewControllerConfig(
 		useCreate,
 		shortCreate,
 		shortCreate,
@@ -49,38 +52,42 @@ func NewStackConfig() *fctl.ControllerConfig {
 			"c",
 		},
 		flags,
-		fctl.Organization,
+		config.Organization,
 	)
 }
 
-var _ fctl.Controller[*CreateStore] = (*CreateController)(nil)
+var _ config.Controller = (*CreateController)(nil)
 
 type CreateController struct {
 	store   *CreateStore
-	profile *fctl.Profile
-	config  *fctl.ControllerConfig
+	profile *config.Profile
+	config  *config.ControllerConfig
 }
 
-func NewStackController(config *fctl.ControllerConfig) *CreateController {
+func (c *CreateController) GetKeyMapAction() *config.KeyMapHandler {
+	return nil
+}
+
+func NewStackController(config *config.ControllerConfig) *CreateController {
 	return &CreateController{
 		store:  NewCreateStore(),
 		config: config,
 	}
 }
 
-func (c *CreateController) GetStore() *CreateStore {
+func (c *CreateController) GetStore() any {
 	return c.store
 }
 
-func (c *CreateController) GetConfig() *fctl.ControllerConfig {
+func (c *CreateController) GetConfig() *config.ControllerConfig {
 	return c.config
 }
 
-func (c *CreateController) Run() (fctl.Renderable, error) {
+func (c *CreateController) Run() (config.Renderer, error) {
 	flags := c.config.GetAllFLags()
 	ctx := c.config.GetContext()
 
-	cfg, err := fctl.GetConfig(flags)
+	cfg, err := config.GetConfig(flags)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +102,7 @@ func (c *CreateController) Run() (fctl.Renderable, error) {
 		return nil, err
 	}
 
-	protected := !fctl.GetBool(flags, unprotectFlag)
+	protected := !config.GetBool(flags, unprotectFlag)
 	metadata := map[string]string{
 		fctl.ProtectedStackMetadata: fctl.BoolPointerToString(&protected),
 	}
@@ -110,7 +117,7 @@ func (c *CreateController) Run() (fctl.Renderable, error) {
 		}
 	}
 
-	region := fctl.GetString(flags, regionFlag)
+	region := config.GetString(flags, regionFlag)
 	if region == "" {
 		regions, _, err := apiClient.DefaultApi.ListRegions(ctx, organization).Execute()
 		if err != nil {
@@ -152,11 +159,11 @@ func (c *CreateController) Run() (fctl.Renderable, error) {
 		return nil, errors.Wrap(err, "creating stack")
 	}
 
-	profile := fctl.GetCurrentProfile(flags, cfg)
+	profile := config.GetCurrentProfile(flags, cfg)
 
-	if !fctl.GetBool(flags, nowaitFlag) {
+	if !config.GetBool(flags, nowaitFlag) {
 		var spinner *pterm.SpinnerPrinter
-		if fctl.GetString(flags, fctl.OutputFlag) == "plain" {
+		if config.GetString(flags, config.OutputFlag) == "plain" {
 			spinner, err = pterm.DefaultSpinner.Start("Waiting services availability")
 			if err != nil {
 				return nil, err
@@ -194,18 +201,24 @@ func (c *CreateController) Run() (fctl.Renderable, error) {
 	return c, nil
 }
 
-func (c *CreateController) Render() error {
-	fctl.BasicTextCyan.WithWriter(c.config.GetOut()).Printfln("Your dashboard will be reachable on: %s",
-		c.profile.ServicesBaseUrl(c.store.Stack).String())
-	return internal.PrintStackInformation(c.config.GetOut(), c.profile, c.store.Stack, c.store.Versions)
+func (c *CreateController) Render() (tea.Model, error) {
+
+	if config.GetString(c.config.GetAllFLags(), config.OutputFlag) == "plain" {
+		fctl.BasicTextCyan.WithWriter(c.config.GetOut()).Printfln("Your dashboard will be reachable on: %s",
+			c.profile.ServicesBaseUrl(c.store.Stack).String())
+	}
+
+	model, err := internal.PrintStackInformation(c.config.GetOut(), c.config.GetAllFLags(), c.profile, c.store.Stack, c.store.Versions)
+	if err != nil {
+		return nil, err
+	}
+	return model, nil
 }
 
 func NewCreateCommand() *cobra.Command {
-
 	config := NewStackConfig()
-
 	return fctl.NewCommand(config.GetUse(),
 		fctl.WithArgs(cobra.RangeArgs(0, 1)),
-		fctl.WithController[*CreateStore](NewStackController(config)),
+		fctl.WithController(NewStackController(config)),
 	)
 }

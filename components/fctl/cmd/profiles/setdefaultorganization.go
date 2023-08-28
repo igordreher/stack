@@ -3,6 +3,9 @@ package profiles
 import (
 	"flag"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/formancehq/fctl/pkg/config"
+
 	"github.com/formancehq/fctl/cmd/profiles/internal"
 	fctl "github.com/formancehq/fctl/pkg"
 	"github.com/pkg/errors"
@@ -26,10 +29,10 @@ func NewSetOrgStore() *SetOrgStore {
 	}
 }
 
-func NewSetOrgConfig() *fctl.ControllerConfig {
+func NewSetOrgConfig() *config.ControllerConfig {
 	flags := flag.NewFlagSet(useSetOrg, flag.ExitOnError)
 
-	c := fctl.NewControllerConfig(
+	c := config.NewControllerConfig(
 		useSetOrg,
 		descriptionSetOrg,
 		shortSetOrg,
@@ -43,29 +46,32 @@ func NewSetOrgConfig() *fctl.ControllerConfig {
 	return c
 }
 
-var _ fctl.Controller[*SetOrgStore] = (*SetOrgController)(nil)
+var _ config.Controller = (*SetOrgController)(nil)
 
 type SetOrgController struct {
 	store  *SetOrgStore
-	config *fctl.ControllerConfig
+	config *config.ControllerConfig
 }
 
-func NewSetOrgController(config *fctl.ControllerConfig) *SetOrgController {
+func NewSetOrgController(config *config.ControllerConfig) *SetOrgController {
 	return &SetOrgController{
 		store:  NewSetOrgStore(),
 		config: config,
 	}
 }
 
-func (c *SetOrgController) GetStore() *SetOrgStore {
+func (c *SetOrgController) GetStore() any {
 	return c.store
 }
+func (c *SetOrgController) GetKeyMapAction() *config.KeyMapHandler {
+	return nil
+}
 
-func (c *SetOrgController) GetConfig() *fctl.ControllerConfig {
+func (c *SetOrgController) GetConfig() *config.ControllerConfig {
 	return c.config
 }
 
-func (c *SetOrgController) Run() (fctl.Renderable, error) {
+func (c *SetOrgController) Run() (config.Renderer, error) {
 
 	flags := c.config.GetAllFLags()
 	args := flags.Args()
@@ -74,12 +80,12 @@ func (c *SetOrgController) Run() (fctl.Renderable, error) {
 		return nil, errors.New("Please provide a profile name")
 	}
 
-	cfg, err := fctl.GetConfig(flags)
+	cfg, err := config.GetConfig(flags)
 	if err != nil {
 		return nil, err
 	}
 
-	fctl.GetCurrentProfile(flags, cfg).SetDefaultOrganization(args[0])
+	config.GetCurrentProfile(flags, cfg).SetDefaultOrganization(args[0])
 
 	if err := cfg.Persist(); err != nil {
 		return nil, errors.Wrap(err, "Updating config")
@@ -89,9 +95,9 @@ func (c *SetOrgController) Run() (fctl.Renderable, error) {
 	return c, nil
 }
 
-func (c *SetOrgController) Render() error {
+func (c *SetOrgController) Render() (tea.Model, error) {
 	pterm.Success.WithWriter(c.config.GetOut()).Printfln("Default organization updated!")
-	return nil
+	return nil, nil
 }
 
 func NewSetDefaultOrganizationCommand() *cobra.Command {
@@ -100,6 +106,6 @@ func NewSetDefaultOrganizationCommand() *cobra.Command {
 	return fctl.NewCommand(config.GetUse(),
 		fctl.WithArgs(cobra.ExactArgs(1)),
 		fctl.WithValidArgsFunction(internal.ProfileCobraAutoCompletion),
-		fctl.WithController[*SetOrgStore](NewSetOrgController(config)),
+		fctl.WithController(NewSetOrgController(config)),
 	)
 }

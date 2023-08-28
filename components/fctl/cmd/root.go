@@ -8,20 +8,11 @@ import (
 	"os/signal"
 	"runtime/debug"
 
-	"github.com/formancehq/fctl/cmd/auth"
-	"github.com/formancehq/fctl/cmd/cloud"
-	"github.com/formancehq/fctl/cmd/ledger"
 	"github.com/formancehq/fctl/cmd/login"
-	"github.com/formancehq/fctl/cmd/orchestration"
-	"github.com/formancehq/fctl/cmd/payments"
 	"github.com/formancehq/fctl/cmd/profiles"
-	"github.com/formancehq/fctl/cmd/search"
-	"github.com/formancehq/fctl/cmd/stack"
-	"github.com/formancehq/fctl/cmd/ui"
-	"github.com/formancehq/fctl/cmd/version"
-	"github.com/formancehq/fctl/cmd/wallets"
-	"github.com/formancehq/fctl/cmd/webhooks"
+	"github.com/formancehq/fctl/pkg/config"
 
+	"github.com/formancehq/fctl/cmd/stack"
 	"github.com/formancehq/fctl/membershipclient"
 	fctl "github.com/formancehq/fctl/pkg"
 	"github.com/formancehq/formance-sdk-go/pkg/models/shared"
@@ -30,37 +21,44 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func NewChildsNode() *config.Node {
+	return config.NewNode(
+		stack.NewNodeController(),
+		profiles.NewNodeController(),
+	)
+}
+
 func NewRootCommand() *cobra.Command {
 	cmd := fctl.NewCommand("fctl",
 		fctl.WithSilenceError(),
 		fctl.WithShortDescription("Formance Control CLI"),
 		fctl.WithSilenceUsage(),
 		fctl.WithChildCommands(
-			ui.NewCommand(),
-			version.NewCommand(),
+			//ui.NewCommand(),
+			//version.NewCommand(),
 			login.NewCommand(),
 			NewPromptCommand(),
-			ledger.NewCommand(),
-			payments.NewCommand(),
+			//ledger.NewCommand(),
+			//payments.NewCommand(),
 			profiles.NewCommand(),
 			stack.NewCommand(),
-			auth.NewCommand(),
-			cloud.NewCommand(),
-			search.NewCommand(),
-			webhooks.NewCommand(),
-			wallets.NewCommand(),
-			orchestration.NewCommand(),
+			//auth.NewCommand(),
+			//cloud.NewCommand(),
+			//search.NewCommand(),
+			//webhooks.NewCommand(),
+			//wallets.NewCommand(),
+			//orchestration.NewCommand(),
 		),
-		fctl.WithGoPersistentFlagSet(fctl.GlobalFlags),
+		fctl.WithGoPersistentFlagSet(config.GlobalFlags),
 	)
 
 	// Register flag completion functions
 	// Already registered with fctl.WithGoFlagSet(fctl.GlobalFlags)
 	// And in ControllerConfig who is assigned by each WithController call
-	err := cmd.RegisterFlagCompletionFunc(fctl.ProfileFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		flags := fctl.ConvertPFlagSetToFlagSet(cmd.Flags())
+	err := cmd.RegisterFlagCompletionFunc(config.ProfileFlag, func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		flags := config.ConvertPFlagSetToFlagSet(cmd.Flags())
 
-		cfg, err := fctl.GetConfig(flags)
+		cfg, err := config.GetConfig(flags)
 		if err != nil {
 			return []string{}, cobra.ShellCompDirectiveError
 		}
@@ -87,14 +85,15 @@ func Execute() {
 	}()
 
 	ctx, _ := signal.NotifyContext(context.TODO(), os.Interrupt)
-
+	ctx = context.WithValue(ctx, "node", NewChildsNode())
 	err := NewRootCommand().ExecuteContext(ctx)
+
 	if err != nil {
 		switch {
 		case errors.Is(err, fctl.ErrMissingApproval):
 			pterm.Error.WithWriter(os.Stderr).Printfln("Command aborted as you didn't approve.")
 			os.Exit(1)
-		case fctl.IsInvalidAuthentication(err):
+		case config.IsInvalidAuthentication(err):
 			pterm.Error.WithWriter(os.Stderr).Printfln("Your authentication is invalid, please login :)")
 		case extractOpenAPIErrorMessage(err) != nil:
 			pterm.Error.WithWriter(os.Stderr).Printfln(extractOpenAPIErrorMessage(err).Error())

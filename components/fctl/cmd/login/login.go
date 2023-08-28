@@ -4,6 +4,9 @@ import (
 	"flag"
 	"fmt"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/formancehq/fctl/pkg/config"
+
 	fctl "github.com/formancehq/fctl/pkg"
 	"github.com/pterm/pterm"
 	"github.com/spf13/cobra"
@@ -30,11 +33,11 @@ func NewStore() *Store {
 	}
 }
 
-func NewConfig() *fctl.ControllerConfig {
+func NewConfig() *config.ControllerConfig {
 	flags := flag.NewFlagSet(useLogin, flag.ExitOnError)
-	flags.String(fctl.MembershipURIFlag, "", "service url")
+	flags.String(config.MembershipURIFlag, "", "service url")
 
-	return fctl.NewControllerConfig(
+	return config.NewControllerConfig(
 		useLogin,
 		descriptionLogin,
 		descriptionLogin,
@@ -45,44 +48,48 @@ func NewConfig() *fctl.ControllerConfig {
 	)
 }
 
-var _ fctl.Controller[*Store] = (*LoginController)(nil)
+var _ config.Controller = (*LoginController)(nil)
 
 type LoginController struct {
 	store  *Store
-	config *fctl.ControllerConfig
+	config *config.ControllerConfig
 }
 
-func NewController(config *fctl.ControllerConfig) *LoginController {
+func (c *LoginController) GetKeyMapAction() *config.KeyMapHandler {
+	return nil
+}
+
+func NewController(config *config.ControllerConfig) *LoginController {
 	return &LoginController{
 		store:  NewStore(),
 		config: config,
 	}
 }
 
-func (c *LoginController) GetStore() *Store {
+func (c *LoginController) GetStore() any {
 	return c.store
 }
 
-func (c *LoginController) GetConfig() *fctl.ControllerConfig {
+func (c *LoginController) GetConfig() *config.ControllerConfig {
 	return c.config
 }
 
-func (c *LoginController) Run() (fctl.Renderable, error) {
+func (c *LoginController) Run() (config.Renderer, error) {
 	flags := c.config.GetAllFLags()
 	ctx := c.config.GetContext()
 
-	cfg, err := fctl.GetConfig(flags)
+	cfg, err := config.GetConfig(flags)
 	if err != nil {
 		return nil, err
 	}
 
-	profile := fctl.GetCurrentProfile(flags, cfg)
-	membershipUri := fctl.GetString(flags, fctl.MembershipURIFlag)
+	profile := config.GetCurrentProfile(flags, cfg)
+	membershipUri := config.GetString(flags, config.MembershipURIFlag)
 	if membershipUri == "" {
 		membershipUri = profile.GetMembershipURI()
 	}
 
-	relyingParty, err := fctl.GetAuthRelyingParty(fctl.GetHttpClient(flags, map[string][]string{}, c.config.GetOut()), membershipUri)
+	relyingParty, err := config.GetAuthRelyingParty(fctl.GetHttpClient(flags, map[string][]string{}, c.config.GetOut()), membershipUri)
 	if err != nil {
 		return nil, err
 	}
@@ -106,22 +113,35 @@ func (c *LoginController) Run() (fctl.Renderable, error) {
 
 	profile.SetMembershipURI(membershipUri)
 
-	currentProfileName := fctl.GetCurrentProfileName(flags, cfg)
+	currentProfileName := config.GetCurrentProfileName(flags, cfg)
 
 	cfg.SetCurrentProfile(currentProfileName, profile)
 
 	return c, cfg.Persist()
 }
 
-func (c *LoginController) Render() error {
-	pterm.Success.WithWriter(c.config.GetOut()).Printfln("Logged!")
-	return nil
+func (c *LoginController) Render() (tea.Model, error) {
+	out := c.config.GetOut()
+	fmt.Fprintln(out, "Please enter the following code on your browser:", c.store.DeviceCode)
+	fmt.Fprintln(out, "Link:", c.store.LoginURI)
+
+	if !c.store.Success && c.store.BrowserURL != "" {
+		fmt.Fprintf(out, "Unable to find a browser, please open the following link: %s", c.store.BrowserURL)
+		return nil, nil
+	}
+
+	if c.store.Success {
+		pterm.Success.WithWriter(c.config.GetOut()).Printfln("Logged!")
+	}
+
+	return nil, nil
+
 }
 
 func NewCommand() *cobra.Command {
-	config := NewConfig()
-	return fctl.NewCommand(config.GetUse(),
+	c := NewConfig()
+	return fctl.NewCommand(c.GetUse(),
 		fctl.WithArgs(cobra.ExactArgs(0)),
-		fctl.WithController[*Store](NewController(config)),
+		fctl.WithController(NewController(c)),
 	)
 }

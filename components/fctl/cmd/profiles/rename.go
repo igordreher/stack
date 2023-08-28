@@ -3,6 +3,9 @@ package profiles
 import (
 	"flag"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/formancehq/fctl/pkg/config"
+
 	"github.com/formancehq/fctl/cmd/profiles/internal"
 	fctl "github.com/formancehq/fctl/pkg"
 	"github.com/pkg/errors"
@@ -24,10 +27,10 @@ func NewRenameStore() *RenameStore {
 		Success: false,
 	}
 }
-func NewRenameConfig() *fctl.ControllerConfig {
+func NewRenameConfig() *config.ControllerConfig {
 	flags := flag.NewFlagSet(useRename, flag.ExitOnError)
 
-	return fctl.NewControllerConfig(
+	return config.NewControllerConfig(
 		useRename,
 		shortRename,
 		shortRename,
@@ -36,36 +39,39 @@ func NewRenameConfig() *fctl.ControllerConfig {
 	)
 }
 
-var _ fctl.Controller[*RenameStore] = (*RenameController)(nil)
+var _ config.Controller = (*RenameController)(nil)
 
 type RenameController struct {
 	store  *RenameStore
-	config *fctl.ControllerConfig
+	config *config.ControllerConfig
 }
 
-func NewRenameController(config *fctl.ControllerConfig) *RenameController {
+func NewRenameController(config *config.ControllerConfig) *RenameController {
 	return &RenameController{
 		store:  NewRenameStore(),
 		config: config,
 	}
 }
 
-func (c *RenameController) GetStore() *RenameStore {
+func (c *RenameController) GetStore() any {
 	return c.store
 }
 
-func (c *RenameController) GetConfig() *fctl.ControllerConfig {
+func (c *RenameController) GetKeyMapAction() *config.KeyMapHandler {
+	return nil
+}
+func (c *RenameController) GetConfig() *config.ControllerConfig {
 	return c.config
 }
 
-func (c *RenameController) Run() (fctl.Renderable, error) {
+func (c *RenameController) Run() (config.Renderer, error) {
 	flags := c.config.GetFlags()
 	args := c.config.GetArgs()
 
 	oldName := args[0]
 	newName := args[1]
 
-	config, err := fctl.GetConfig(flags)
+	config, err := config.GetConfig(flags)
 	if err != nil {
 		return nil, err
 	}
@@ -92,9 +98,9 @@ func (c *RenameController) Run() (fctl.Renderable, error) {
 	return c, nil
 }
 
-func (c *RenameController) Render() error {
+func (c *RenameController) Render() (tea.Model, error) {
 	pterm.Success.WithWriter(c.config.GetOut()).Printfln("Profile renamed!")
-	return nil
+	return nil, nil
 }
 
 func NewRenameCommand() *cobra.Command {
@@ -102,6 +108,6 @@ func NewRenameCommand() *cobra.Command {
 	return fctl.NewCommand(config.GetUse(),
 		fctl.WithArgs(cobra.ExactArgs(2)),
 		fctl.WithValidArgsFunction(internal.ProfileCobraAutoCompletion),
-		fctl.WithController[*RenameStore](NewRenameController(config)),
+		fctl.WithController(NewRenameController(config)),
 	)
 }

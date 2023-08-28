@@ -6,6 +6,10 @@ import (
 	"runtime"
 )
 
+var (
+	ErrOpenningBrowser = errors.New("opening browser")
+)
+
 func Map[SRC any, DST any](srcs []SRC, mapper func(SRC) DST) []DST {
 	ret := make([]DST, 0)
 	for _, src := range srcs {
@@ -34,10 +38,6 @@ func ContainValue[V comparable](array []V, value V) bool {
 	}
 	return false
 }
-
-var (
-	ErrOpenningBrowser = errors.New("opening browser")
-)
 
 func Ptr[T any](t T) *T {
 	return &t

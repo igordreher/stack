@@ -3,6 +3,9 @@ package profiles
 import (
 	"flag"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/formancehq/fctl/pkg/config"
+
 	"github.com/formancehq/fctl/cmd/profiles/internal"
 	fctl "github.com/formancehq/fctl/pkg"
 	"github.com/pkg/errors"
@@ -28,10 +31,10 @@ func NewShowStore() *ShowStore {
 	}
 }
 
-func NewShowConfig() *fctl.ControllerConfig {
+func NewShowConfig() *config.ControllerConfig {
 	flags := flag.NewFlagSet(useShow, flag.ExitOnError)
 
-	return fctl.NewControllerConfig(
+	return config.NewControllerConfig(
 		useShow,
 		descriptionShow,
 		shortShow,
@@ -43,36 +46,38 @@ func NewShowConfig() *fctl.ControllerConfig {
 
 }
 
-var _ fctl.Controller[*ShowStore] = (*ShowController)(nil)
+var _ config.Controller = (*ShowController)(nil)
 
 type ShowController struct {
 	store  *ShowStore
-	config *fctl.ControllerConfig
+	config *config.ControllerConfig
 }
 
-func NewShowController(config *fctl.ControllerConfig) *ShowController {
+func NewShowController(config *config.ControllerConfig) *ShowController {
 	return &ShowController{
 		store:  NewShowStore(),
 		config: config,
 	}
 }
-
-func (c *ShowController) GetStore() *ShowStore {
+func (c *ShowController) GetKeyMapAction() *config.KeyMapHandler {
+	return nil
+}
+func (c *ShowController) GetStore() any {
 	return c.store
 }
 
-func (c *ShowController) GetConfig() *fctl.ControllerConfig {
+func (c *ShowController) GetConfig() *config.ControllerConfig {
 	return c.config
 }
 
-func (c *ShowController) Run() (fctl.Renderable, error) {
+func (c *ShowController) Run() (config.Renderer, error) {
 
 	args := c.config.GetArgs()
 	if len(args) < 1 {
 		return nil, errors.New("Profile: invalid number of arguments")
 	}
 
-	config, err := fctl.GetConfig(c.config.GetAllFLags())
+	config, err := config.GetConfig(c.config.GetAllFLags())
 	if err != nil {
 		return nil, err
 	}
@@ -88,12 +93,12 @@ func (c *ShowController) Run() (fctl.Renderable, error) {
 	return c, nil
 }
 
-func (c *ShowController) Render() error {
+func (c *ShowController) Render() (tea.Model, error) {
 
 	tableData := pterm.TableData{}
 	tableData = append(tableData, []string{pterm.LightCyan("Membership URI"), c.store.MembershipURI})
 	tableData = append(tableData, []string{pterm.LightCyan("Default organization"), c.store.DefaultOrganization})
-	return pterm.DefaultTable.
+	return nil, pterm.DefaultTable.
 		WithWriter(c.config.GetOut()).
 		WithData(tableData).
 		Render()
@@ -104,6 +109,6 @@ func NewShowCommand() *cobra.Command {
 	return fctl.NewCommand(config.GetUse(),
 		fctl.WithArgs(cobra.ExactArgs(1)),
 		fctl.WithValidArgsFunction(internal.ProfileCobraAutoCompletion),
-		fctl.WithController[*ShowStore](NewShowController(config)),
+		fctl.WithController(NewShowController(config)),
 	)
 }

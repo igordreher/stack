@@ -3,6 +3,9 @@ package stack
 import (
 	"flag"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/formancehq/fctl/pkg/config"
+
 	"github.com/formancehq/fctl/cmd/stack/internal"
 	"github.com/formancehq/fctl/membershipclient"
 	fctl "github.com/formancehq/fctl/pkg"
@@ -28,12 +31,12 @@ func NewDeletedStore() *DeletedStore {
 	}
 }
 
-func NewDeleteConfig() *fctl.ControllerConfig {
+func NewDeleteConfig() *config.ControllerConfig {
 	flags := flag.NewFlagSet(useDelete, flag.ExitOnError)
 	flags.String(internal.StackNameFlag, "", "Stack to remove")
-	fctl.WithConfirmFlag(flags)
+	config.WithConfirmFlag(flags)
 
-	return fctl.NewControllerConfig(
+	return config.NewControllerConfig(
 		useDelete,
 		shortDelete,
 		shortDelete,
@@ -43,37 +46,41 @@ func NewDeleteConfig() *fctl.ControllerConfig {
 			"rm",
 		},
 		flags,
-		fctl.Organization,
+		config.Organization,
 	)
 }
 
-var _ fctl.Controller[*DeletedStore] = (*StackDeleteController)(nil)
+//var _ config.Controller[*DeletedStore] = (*StackDeleteController)(nil)
 
 type StackDeleteController struct {
 	store  *DeletedStore
-	config *fctl.ControllerConfig
+	config *config.ControllerConfig
 }
 
-func NewDeleteController(config *fctl.ControllerConfig) *StackDeleteController {
+func (c *StackDeleteController) GetKeyMapAction() *config.KeyMapHandler {
+	return nil
+}
+
+func NewDeleteController(config *config.ControllerConfig) *StackDeleteController {
 	return &StackDeleteController{
 		store:  NewDeletedStore(),
 		config: config,
 	}
 }
 
-func (c *StackDeleteController) GetStore() *DeletedStore {
+func (c *StackDeleteController) GetStore() any {
 	return c.store
 }
 
-func (c *StackDeleteController) GetConfig() *fctl.ControllerConfig {
+func (c *StackDeleteController) GetConfig() *config.ControllerConfig {
 	return c.config
 }
 
-func (c *StackDeleteController) Run() (fctl.Renderable, error) {
+func (c *StackDeleteController) Run() (config.Renderer, error) {
 	flags := c.config.GetAllFLags()
 	ctx := c.config.GetContext()
 
-	cfg, err := fctl.GetConfig(flags)
+	cfg, err := config.GetConfig(flags)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +96,7 @@ func (c *StackDeleteController) Run() (fctl.Renderable, error) {
 
 	var stack *membershipclient.Stack
 	if len(c.config.GetArgs()) == 1 {
-		if fctl.GetString(flags, internal.StackNameFlag) != "" {
+		if config.GetString(flags, internal.StackNameFlag) != "" {
 			return nil, errors.New("need either an id of a name specified using --name flag")
 		}
 
@@ -99,7 +106,7 @@ func (c *StackDeleteController) Run() (fctl.Renderable, error) {
 		}
 		stack = rsp.Data
 	} else {
-		if fctl.GetString(flags, internal.StackNameFlag) == "" {
+		if config.GetString(flags, internal.StackNameFlag) == "" {
 			return nil, errors.New("need either an id of a name specified using --name flag")
 		}
 		stacks, _, err := apiClient.DefaultApi.ListStacks(ctx, organization).Execute()
@@ -107,7 +114,7 @@ func (c *StackDeleteController) Run() (fctl.Renderable, error) {
 			return nil, errors.Wrap(err, "listing stacks")
 		}
 		for _, s := range stacks.Data {
-			if s.Name == fctl.GetString(flags, internal.StackNameFlag) {
+			if s.Name == config.GetString(flags, internal.StackNameFlag) {
 				stack = &s
 				break
 			}
@@ -131,15 +138,15 @@ func (c *StackDeleteController) Run() (fctl.Renderable, error) {
 	return c, nil
 }
 
-func (c *StackDeleteController) Render() error {
+func (c *StackDeleteController) Render() (tea.Model, error) {
 	pterm.Success.WithWriter(c.config.GetOut()).Printfln("Stack deleted.")
-	return nil
+	return nil, nil
 }
 
 func NewDeleteCommand() *cobra.Command {
 	config := NewDeleteConfig()
 	return fctl.NewCommand(config.GetUse(),
 		fctl.WithArgs(cobra.MaximumNArgs(1)),
-		fctl.WithController[*DeletedStore](NewDeleteController(config)),
+		fctl.WithController(NewDeleteController(config)),
 	)
 }

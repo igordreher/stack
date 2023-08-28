@@ -3,6 +3,9 @@ package profiles
 import (
 	"flag"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/formancehq/fctl/pkg/config"
+
 	"github.com/formancehq/fctl/cmd/profiles/internal"
 	fctl "github.com/formancehq/fctl/pkg"
 	"github.com/pkg/errors"
@@ -25,10 +28,10 @@ func NewDeleteStore() *DeleteStore {
 		Success: false,
 	}
 }
-func NewDeleteConfig() *fctl.ControllerConfig {
+func NewDeleteConfig() *config.ControllerConfig {
 	flags := flag.NewFlagSet(useDelete, flag.ExitOnError)
 
-	return fctl.NewControllerConfig(
+	return config.NewControllerConfig(
 		useDelete,
 		descriptionDelete,
 		shortDelete,
@@ -40,29 +43,31 @@ func NewDeleteConfig() *fctl.ControllerConfig {
 
 }
 
-var _ fctl.Controller[*DeleteStore] = (*DeleteController)(nil)
+var _ config.Controller = (*DeleteController)(nil)
 
 type DeleteController struct {
 	store  *DeleteStore
-	config *fctl.ControllerConfig
+	config *config.ControllerConfig
 }
 
-func NewDeleteController(config *fctl.ControllerConfig) *DeleteController {
+func NewDeleteController(config *config.ControllerConfig) *DeleteController {
 	return &DeleteController{
 		store:  NewDeleteStore(),
 		config: config,
 	}
 }
-
-func (c *DeleteController) GetStore() *DeleteStore {
+func (c *DeleteController) GetKeyMapAction() *config.KeyMapHandler {
+	return nil
+}
+func (c *DeleteController) GetStore() any {
 	return c.store
 }
 
-func (c *DeleteController) GetConfig() *fctl.ControllerConfig {
+func (c *DeleteController) GetConfig() *config.ControllerConfig {
 	return c.config
 }
 
-func (c *DeleteController) Run() (fctl.Renderable, error) {
+func (c *DeleteController) Run() (config.Renderer, error) {
 
 	flags := c.config.GetFlags()
 	args := c.config.GetArgs()
@@ -71,7 +76,7 @@ func (c *DeleteController) Run() (fctl.Renderable, error) {
 		return nil, errors.New("Profile(delete): invalid number of arguments")
 	}
 
-	config, err := fctl.GetConfig(flags)
+	config, err := config.GetConfig(flags)
 	if err != nil {
 		return nil, err
 	}
@@ -88,9 +93,9 @@ func (c *DeleteController) Run() (fctl.Renderable, error) {
 	return c, nil
 }
 
-func (c *DeleteController) Render() error {
+func (c *DeleteController) Render() (tea.Model, error) {
 	pterm.Success.WithWriter(c.config.GetOut()).Printfln("Profile deleted!")
-	return nil
+	return nil, nil
 }
 
 func NewDeleteCommand() *cobra.Command {
@@ -98,6 +103,6 @@ func NewDeleteCommand() *cobra.Command {
 	return fctl.NewCommand(config.GetUse(),
 		fctl.WithArgs(cobra.ExactArgs(1)),
 		fctl.WithValidArgsFunction(internal.ProfileCobraAutoCompletion),
-		fctl.WithController[*DeleteStore](NewDeleteController(config)),
+		fctl.WithController(NewDeleteController(config)),
 	)
 }

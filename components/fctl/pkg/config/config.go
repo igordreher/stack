@@ -1,4 +1,4 @@
-package fctl
+package config
 
 import (
 	"encoding/json"
@@ -115,11 +115,11 @@ func GetConfigManager(flagSet *flag.FlagSet) *ConfigManager {
 	return NewConfigManager(GetString(flagSet, ConfigFlag))
 }
 
-func GetCurrentProfileName(flags *flag.FlagSet, config *Config) string {
+func GetCurrentProfileName(flags *flag.FlagSet, controllerConfig *Config) string {
 	if profile := GetString(flags, ProfileFlag); profile != "" {
 		return profile
 	}
-	currentProfileName := config.GetCurrentProfileName()
+	currentProfileName := controllerConfig.GetCurrentProfileName()
 	if currentProfileName == "" {
 		currentProfileName = "default"
 	}

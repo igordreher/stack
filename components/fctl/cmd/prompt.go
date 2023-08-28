@@ -11,6 +11,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/formancehq/fctl/pkg/config"
+
 	_ "github.com/athul/shelby/mods"
 	goprompt "github.com/c-bata/go-prompt"
 	fctl "github.com/formancehq/fctl/pkg"
@@ -33,7 +35,7 @@ func (p *prompt) completionsFromCommand(subCommand *cobra.Command, completionsAr
 		// The autocompletion library sometimes panic
 		// As it is not critical, we just catch the error and display it only when debug enabled
 		if err := recover(); err != nil {
-			isDebug, _ := subCommand.Flags().GetBool(fctl.DebugFlag)
+			isDebug, _ := subCommand.Flags().GetBool(config.DebugFlag)
 			if isDebug {
 				fmt.Println(err)
 				debug.PrintStack()
@@ -59,10 +61,10 @@ func (p *prompt) completionsFromCommand(subCommand *cobra.Command, completionsAr
 	}), d.GetWordBeforeCursor(), true)
 }
 
-func (p *prompt) completions(cfg *fctl.Config, d goprompt.Document) []goprompt.Suggest {
+func (p *prompt) completions(cfg *config.Config, d goprompt.Document) []goprompt.Suggest {
 	suggestions := make([]goprompt.Suggest, 0)
 	switch {
-	case strings.HasPrefix(d.Text, ":set "+fctl.ProfileFlag):
+	case strings.HasPrefix(d.Text, ":set "+config.ProfileFlag):
 		profiles := fctl.MapKeys(cfg.GetProfiles())
 		sort.Strings(profiles)
 		for _, p := range profiles {
@@ -71,7 +73,7 @@ func (p *prompt) completions(cfg *fctl.Config, d goprompt.Document) []goprompt.S
 				Description: "Select profile",
 			})
 		}
-	case strings.HasPrefix(d.Text, ":set "+fctl.DebugFlag) || strings.HasPrefix(d.Text, ":set "+fctl.InsecureTlsFlag):
+	case strings.HasPrefix(d.Text, ":set "+config.DebugFlag) || strings.HasPrefix(d.Text, ":set "+config.InsecureTlsFlag):
 		suggestions = append(suggestions, goprompt.Suggest{
 			Text: "true",
 		}, goprompt.Suggest{
@@ -79,13 +81,13 @@ func (p *prompt) completions(cfg *fctl.Config, d goprompt.Document) []goprompt.S
 		})
 	case strings.HasPrefix(d.Text, ":set"):
 		suggestions = append(suggestions, goprompt.Suggest{
-			Text:        fctl.ProfileFlag,
+			Text:        config.ProfileFlag,
 			Description: "Select profile",
 		}, goprompt.Suggest{
-			Text:        fctl.DebugFlag,
+			Text:        config.DebugFlag,
 			Description: "Set debug",
 		}, goprompt.Suggest{
-			Text:        fctl.InsecureTlsFlag,
+			Text:        config.InsecureTlsFlag,
 			Description: "Set insecure TLS",
 		})
 	default:
@@ -101,7 +103,7 @@ func (p *prompt) completions(cfg *fctl.Config, d goprompt.Document) []goprompt.S
 	return goprompt.FilterHasPrefix(suggestions, d.GetWordBeforeCursor(), true)
 }
 
-func (p *prompt) startPrompt(prompt string, cfg *fctl.Config, opts ...goprompt.Option) string {
+func (p *prompt) startPrompt(prompt string, cfg *config.Config, opts ...goprompt.Option) string {
 	return goprompt.Input(prompt, func(d goprompt.Document) []goprompt.Suggest {
 		subCommand := NewRootCommand()
 
@@ -151,7 +153,7 @@ func (p *prompt) executePromptCommand(cmd *cobra.Command, t string) error {
 		if len(parts) != 2 {
 			return errors.New("malformed command")
 		} else {
-			if v := parts[0]; v != fctl.ProfileFlag && v != fctl.DebugFlag && v != fctl.InsecureTlsFlag {
+			if v := parts[0]; v != config.ProfileFlag && v != config.DebugFlag && v != config.InsecureTlsFlag {
 				return fmt.Errorf("unknown configuration: %s", v)
 			}
 			_ = cmd.Flags().Set(parts[0], parts[1])
@@ -164,8 +166,8 @@ func (p *prompt) executePromptCommand(cmd *cobra.Command, t string) error {
 	return nil
 }
 
-func (p *prompt) refreshUserEmail(flags *flag.FlagSet, cfg *fctl.Config) error {
-	profile := fctl.GetCurrentProfile(flags, cfg)
+func (p *prompt) refreshUserEmail(flags *flag.FlagSet, cfg *config.Config) error {
+	profile := config.GetCurrentProfile(flags, cfg)
 	if !profile.IsConnected() {
 		p.userEmail = ""
 		return nil
@@ -179,11 +181,11 @@ func (p *prompt) refreshUserEmail(flags *flag.FlagSet, cfg *fctl.Config) error {
 	return nil
 }
 
-func (p *prompt) displayHeader(flags *flag.FlagSet, cfg *fctl.Config, out io.Writer) error {
-	header := fctl.GetCurrentProfileName(flags, cfg)
+func (p *prompt) displayHeader(flags *flag.FlagSet, cfg *config.Config, out io.Writer) error {
+	header := config.GetCurrentProfileName(flags, cfg)
 	if p.userEmail != "" {
 		header += " / " + p.userEmail
-		if organizationID := fctl.GetCurrentProfile(flags, cfg).GetDefaultOrganization(); organizationID != "" {
+		if organizationID := config.GetCurrentProfile(flags, cfg).GetDefaultOrganization(); organizationID != "" {
 			header += " / " + organizationID
 		}
 	}
@@ -193,14 +195,14 @@ func (p *prompt) displayHeader(flags *flag.FlagSet, cfg *fctl.Config, out io.Wri
 }
 
 func (p *prompt) nextCommand(cmd *cobra.Command) error {
-	flags := fctl.ConvertPFlagSetToFlagSet(cmd.Flags())
+	flags := config.ConvertPFlagSetToFlagSet(cmd.Flags())
 
-	cfg, err := fctl.GetConfig(flags)
+	cfg, err := config.GetConfig(flags)
 	if err != nil {
 		return err
 	}
 
-	currentProfileName := fctl.GetCurrentProfileName(flags, cfg)
+	currentProfileName := config.GetCurrentProfileName(flags, cfg)
 	if currentProfileName != p.actualProfile || p.userEmail == "" {
 		if err := p.refreshUserEmail(flags, cfg); err != nil {
 			return err
