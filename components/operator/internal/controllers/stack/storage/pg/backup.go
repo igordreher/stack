@@ -31,10 +31,6 @@ func BackupDatabase(database string, conf v1beta3.PostgresConfig) ([]byte, error
 	cmd.Env = os.Environ()
 	cmd.Env = append(cmd.Env, fmt.Sprintf("PGPASSWORD=%s", conf.Password))
 
-	// This should be output as logger.Error only if we are in debug mode ?
-	// cmd.Stderr = os.Stderr
-	// stderr := cmd.StderrPipe()
-
 	if errors.Is(cmd.Err, exec.ErrDot) {
 		cmd.Err = nil
 	}
