@@ -15,6 +15,7 @@ import (
 	oidcclient "github.com/zitadel/oidc/v2/pkg/client"
 	"golang.org/x/oauth2/clientcredentials"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	controllererrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
@@ -152,7 +153,7 @@ func (client *client) createStack(stack *generated.Stack) *v1beta3.Stack {
 	}
 }
 
-func (client *client) stackFusion(currentStack *v1beta3.Stack, createStack *v1beta3.Stack) *v1beta3.Stack {
+func (client *client) mergeStack(currentStack *v1beta3.Stack, createStack *v1beta3.Stack) *v1beta3.Stack {
 	createStack.SetResourceVersion(currentStack.GetResourceVersion())
 	createStack.Spec.Services = currentStack.Spec.Services
 	createStack.Spec.Seed = currentStack.Spec.Seed
@@ -246,13 +247,35 @@ func (client *client) Start(ctx context.Context) error {
 			if err := client.connectClient.SendMsg(&generated.Message{
 				Message: &generated.Message_StatusChanged{
 					StatusChanged: &generated.StatusChanged{
-						StackId: stack.Name,
+						ClusterName: stack.Name,
 						Status:  status,
 					},
 				},
 			}); err != nil {
 				sharedlogging.FromContext(ctx).Errorf("Unable to send stack status to server: %s", err)
 			}
+
+			sharedlogging.FromContext(ctx).Infof("Existing stack: %s", stack.Name)
+
+			if err := client.connectClient.SendMsg(&generated.Message{
+				Message: &generated.Message_ExistingStack{
+					ExistingStack: &generated.Stack{
+						ClusterName: stack.Name,
+						Disabled:    stack.Spec.Disabled,
+						DeletedAt: func() *timestamppb.Timestamp {
+							if stack.DeletionTimestamp.IsZero() {
+								return nil
+							}
+
+							return timestamppb.New(stack.DeletionTimestamp.Time)
+						}(),
+					},
+				},
+			}); err != nil {
+				sharedlogging.FromContext(ctx).Errorf("Unable to send Order_ExistingStack to control plane: %s", err)
+			}
+
+			sharedlogging.FromContext(ctx).Infof("Stack %s updated control plane side", stack.Name)
 		case msg := <-msgs:
 			switch msg := msg.Message.(type) {
 			// TODO: Implement UpdateOrCreate
@@ -272,11 +295,12 @@ func (client *client) Start(ctx context.Context) error {
 					continue
 				}
 
-				newStack := client.stackFusion(existingStack, createStack)
+				newStack := client.mergeStack(existingStack, createStack)
 				if _, err := client.k8sClient.Update(ctx, newStack); err != nil {
 					sharedlogging.FromContext(ctx).Errorf("Updating stack cluster side: %s", err)
 					continue
 				}
+
 				sharedlogging.FromContext(ctx).Infof("Stack %s updated", newStack.Name)
 
 			case *generated.Order_DeletedStack:

@@ -77,8 +77,6 @@ type Reconciler struct {
 func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 
 	log := log.FromContext(ctx, "stack", req.NamespacedName)
-	log.Info("Starting reconciliation")
-
 	stack := &stackv1beta3.Stack{}
 	if err := r.client.Get(ctx, req.NamespacedName, stack); err != nil {
 		if errors.IsNotFound(err) {
@@ -87,6 +85,8 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 		}
 		return ctrl.Result{}, pkgError.Wrap(err, "Reading target")
 	}
+	log.Info("Starting reconciliation")
+
 	stack.SetProgressing()
 
 	var (
@@ -112,6 +112,19 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 			Requeue:      true,
 			RequeueAfter: time.Second,
 		}, nil
+	}
+
+	conf := &stackv1beta3.Configuration{}
+	if err := r.client.Get(ctx, types.NamespacedName{
+		Namespace: "",
+		Name:      stack.Spec.Seed,
+	}, conf); err != nil {
+		return ctrl.Result{}, err
+	}
+
+	res, err := r.HandleFinalizer(ctx, log, stack, conf, req)
+	if res != nil || err != nil {
+		return *res, err
 	}
 
 	if patchErr := r.client.Status().Update(ctx, stack); patchErr != nil {

@@ -13,8 +13,9 @@ RUN --mount=type=cache,id=gobuild,target=/root/.cache/go-build \
 
 # Use distroless as minimal base image to package the manager binary
 # Refer to https://github.com/GoogleContainerTools/distroless for more details
-FROM gcr.io/distroless/static:nonroot as release
+FROM alpine:3.18.2 as release
 LABEL org.opencontainers.image.source=https://github.com/formancehq/operator
+RUN apk add --no-cache postgresql15-client
 WORKDIR /
 COPY --from=builder /src/components/operator/manager /usr/bin/operator
 USER 65532:65532

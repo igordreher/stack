@@ -341,6 +341,11 @@ func (in *ConfigurationSpec) DeepCopyInto(out *ConfigurationSpec) {
 		*out = new(MonitoringSpec)
 		(*in).DeepCopyInto(*out)
 	}
+	if in.S3 != nil {
+		in, out := &in.S3, &out.S3
+		*out = new(S3ConfigSpec)
+		(*in).DeepCopyInto(*out)
+	}
 	in.Ingress.DeepCopyInto(&out.Ingress)
 	out.Temporal = in.Temporal
 }
