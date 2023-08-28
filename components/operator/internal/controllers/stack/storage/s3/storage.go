@@ -10,6 +10,10 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
+const (
+	contentEncoding = "compress"
+)
+
 type Storage interface {
 	PutFile(fileName string, file []byte) error
 	Exist(fileName string) (bool, error)
@@ -26,7 +30,7 @@ func (s S3Storage) PutFile(fileName string, file []byte) error {
 	input := &s3manager.UploadInput{
 		Bucket:          aws.String(s.bucket),
 		Key:             aws.String(fileName),
-		ContentEncoding: aws.String("gzip"),
+		ContentEncoding: aws.String(contentEncoding),
 		Body:            bytes.NewReader(file),
 	}
 	_, err := client.Upload(input)

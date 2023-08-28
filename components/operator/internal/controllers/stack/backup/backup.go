@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	extension = ".gz"
+	extension = ".dump"
 )
 
 var (
@@ -89,7 +89,6 @@ func backupService(
 }
 
 func backupPostgres(databaseName string, conf v1beta3.PostgresConfig, logger logr.Logger) ([]byte, error) {
-
 	data, err := pg.BackupDatabase(
 		databaseName,
 		conf,
