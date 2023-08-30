@@ -255,7 +255,7 @@ func (client *client) Start(ctx context.Context) error {
 				sharedlogging.FromContext(ctx).Errorf("Unable to send stack status to server: %s", err)
 			}
 
-			sharedlogging.FromContext(ctx).Infof("Existing stack: %s", stack.Name)
+			sharedlogging.FromContext(ctx).Infof("Stack[EXISTING] %s updated control plane side", stack.Name)
 
 			if err := client.connectClient.SendMsg(&generated.Message{
 				Message: &generated.Message_ExistingStack{
@@ -272,10 +272,26 @@ func (client *client) Start(ctx context.Context) error {
 					},
 				},
 			}); err != nil {
-				sharedlogging.FromContext(ctx).Errorf("Unable to send Order_ExistingStack to control plane: %s", err)
+				sharedlogging.FromContext(ctx).Errorf("Unable to send Message_ExistingStack to membership: %s", err)
 			}
 
-			sharedlogging.FromContext(ctx).Infof("Stack %s updated control plane side", stack.Name)
+			sharedlogging.FromContext(ctx).Infof("Stack[STATUS] %s updated control plane side", stack.Name)
+			if err := client.connectClient.SendMsg(&generated.Message{
+				Message: &generated.Message_StatusChanged{
+					StatusChanged: &generated.StatusChanged{
+						ClusterName: stack.Name,
+						Status: func() generated.StackStatus {
+							if stack.IsReady() {
+								return generated.StackStatus_Ready
+							}
+							return generated.StackStatus_Progressing
+						}(),
+					},
+				},
+			}); err != nil {
+				sharedlogging.FromContext(ctx).Errorf("Unable to send stack status to server: %s", err)
+			}
+
 		case msg := <-msgs:
 			switch msg := msg.Message.(type) {
 			// TODO: Implement UpdateOrCreate
