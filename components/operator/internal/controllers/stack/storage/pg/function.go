@@ -15,7 +15,7 @@ var (
 )
 
 func Exists(db *sql.DB, databaseName string) error {
-	res, err := db.Exec("SELECT datname FROM pg_catalog.pg_database WHERE lower(datname) = lower('%s');", databaseName)
+	res, err := db.Exec("SELECT datname FROM pg_catalog.pg_database WHERE lower(datname) = lower('" + databaseName + "');")
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func Exists(db *sql.DB, databaseName string) error {
 }
 
 func DropDB(db *sql.DB, stackName string, serviceName string) error {
-	_, err := db.Exec("DROP DATABASE IF EXISTS %s", fmt.Sprintf("\"%s-%s\"", stackName, serviceName))
+	_, err := db.Exec("DROP DATABASE IF EXISTS " + fmt.Sprintf("\"%s-%s\"", stackName, serviceName))
 	if err != nil {
 		return err
 	}
