@@ -320,6 +320,17 @@ func (client *client) Start(ctx context.Context) error {
 				sharedlogging.FromContext(ctx).Infof("Stack %s updated", newStack.Name)
 
 			case *generated.Order_DeletedStack:
+				_, err := client.k8sClient.Get(ctx, msg.DeletedStack.ClusterName, metav1.GetOptions{})
+				if err != nil {
+					if controllererrors.IsNotFound(err) {
+						sharedlogging.FromContext(ctx).Infof("Cannot delete not existing stack: %s", msg.DeletedStack.ClusterName)
+
+						continue
+					}
+					sharedlogging.FromContext(ctx).Errorf("Get Stack cluster side: %s", err)
+					continue
+				}
+
 				if err := client.k8sClient.Delete(ctx, msg.DeletedStack.ClusterName); err != nil {
 					sharedlogging.FromContext(ctx).Errorf("Deleting cluster side: %s", err)
 					if controllererrors.IsNotFound(err) {
