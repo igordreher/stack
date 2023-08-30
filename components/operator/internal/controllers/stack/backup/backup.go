@@ -72,7 +72,7 @@ func backupPgService(
 		return nil
 	}
 
-	client, err := pg.OpenClient(postgresConfig)
+	client, err := pg.OpenClient(pgConfig)
 	if err != nil {
 		logger.Error(err, "PG: Cannot open pg client")
 		return err
