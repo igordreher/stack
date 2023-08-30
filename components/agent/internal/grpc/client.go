@@ -272,10 +272,10 @@ func (client *client) Start(ctx context.Context) error {
 					},
 				},
 			}); err != nil {
-				sharedlogging.FromContext(ctx).Errorf("Unable to send Message_ExistingStack to membership: %s", err)
+				sharedlogging.FromContext(ctx).Errorf("Unable to send ExistingStack to membership: %s", err)
 			}
 
-			sharedlogging.FromContext(ctx).Infof("Stack[STATUS] %s updated control plane side", stack.Name)
+			sharedlogging.FromContext(ctx).Infof("Stack[STATUS] %s updated cluster side", stack.Name)
 			if err := client.connectClient.SendMsg(&generated.Message{
 				Message: &generated.Message_StatusChanged{
 					StatusChanged: &generated.StatusChanged{
@@ -317,9 +317,11 @@ func (client *client) Start(ctx context.Context) error {
 					continue
 				}
 
-				sharedlogging.FromContext(ctx).Infof("Stack %s updated", newStack.Name)
+				sharedlogging.FromContext(ctx).Infof("Stack %s updated cluster side", newStack.Name)
 
 			case *generated.Order_DeletedStack:
+
+				sharedlogging.FromContext(ctx).Infof("Incomming DELETION: %s", msg.DeletedStack.ClusterName)
 				_, err := client.k8sClient.Get(ctx, msg.DeletedStack.ClusterName, metav1.GetOptions{})
 				if err != nil {
 					if controllererrors.IsNotFound(err) {
@@ -349,6 +351,8 @@ func (client *client) Start(ctx context.Context) error {
 				}
 				sharedlogging.FromContext(ctx).Infof("Stack %s deleted", msg.DeletedStack.ClusterName)
 			case *generated.Order_DisabledStack:
+				sharedlogging.FromContext(ctx).Infof("Incomming DISABLING: %s", msg.DisabledStack.ClusterName)
+
 				existingStack, err := client.k8sClient.Get(ctx, msg.DisabledStack.ClusterName, metav1.GetOptions{})
 				if err != nil {
 					if controllererrors.IsNotFound(err) {
@@ -365,6 +369,7 @@ func (client *client) Start(ctx context.Context) error {
 				}
 				sharedlogging.FromContext(ctx).Infof("Stack %s disabled", msg.DisabledStack.ClusterName)
 			case *generated.Order_EnabledStack:
+				sharedlogging.FromContext(ctx).Infof("Incomming ENABLING: %s", msg.EnabledStack.ClusterName)
 				existingStack, err := client.k8sClient.Get(ctx, msg.EnabledStack.ClusterName, metav1.GetOptions{})
 				if err != nil {
 					if controllererrors.IsNotFound(err) {
