@@ -40,7 +40,7 @@ func BackupServices(c *v1beta3.Configuration, stackName string, storage s3.Stora
 			serviceName := strings.ToLower(values.Type().Field(i).Name)
 			databaseName := fmt.Sprintf("%s-%s", stackName, serviceName)
 
-			if err := backupService(c, postgresConfig, databaseName, storage, t, logger); err != nil {
+			if err := backupPgService(c, postgresConfig, databaseName, storage, t, logger); err != nil {
 				logger.Error(err, "service not backuped"+err.Error())
 				return err
 			}
@@ -49,7 +49,7 @@ func BackupServices(c *v1beta3.Configuration, stackName string, storage s3.Stora
 	return nil
 }
 
-func backupService(
+func backupPgService(
 	c *v1beta3.Configuration,
 	pgConfig v1beta3.PostgresConfig,
 	databaseName string,
@@ -70,6 +70,21 @@ func backupService(
 	if exist {
 		logger.Info("database already backuped")
 		return nil
+	}
+
+	client, err := pg.OpenClient(postgresConfig)
+	if err != nil {
+		logger.Error(err, "PG: Cannot open pg client")
+		return err
+	}
+	defer client.Close()
+
+	if err := pg.Exists(client, databaseName); err != nil {
+		if err == pg.ErrNotExisting {
+			logger.Error(err, "PG: Database does not exists")
+			return nil
+		}
+		return err
 	}
 
 	data, err := backupPostgres(databaseName, pgConfig, logger)
