@@ -325,7 +325,7 @@ func (client *client) Start(ctx context.Context) error {
 					if controllererrors.IsNotFound(err) {
 						sharedlogging.FromContext(ctx).Infof("Cannot delete not existing stack: %s", msg.DeletedStack.ClusterName)
 
-						continue
+						return err
 					}
 					sharedlogging.FromContext(ctx).Errorf("Get Stack cluster side: %s", err)
 					continue
@@ -353,7 +353,7 @@ func (client *client) Start(ctx context.Context) error {
 				if err != nil {
 					if controllererrors.IsNotFound(err) {
 						sharedlogging.FromContext(ctx).Infof("Cannot disable not existing stack: %s", msg.DisabledStack.ClusterName)
-						continue
+						return err
 					}
 					sharedlogging.FromContext(ctx).Errorf("Reading stack cluster side: %s", err)
 					continue
@@ -369,7 +369,7 @@ func (client *client) Start(ctx context.Context) error {
 				if err != nil {
 					if controllererrors.IsNotFound(err) {
 						sharedlogging.FromContext(ctx).Infof("Cannot enable not existing stack: %s", msg.EnabledStack.ClusterName)
-						continue
+						return err
 					}
 					sharedlogging.FromContext(ctx).Errorf("Reading stack cluster side: %s", err)
 					continue
