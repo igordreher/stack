@@ -248,7 +248,7 @@ func (client *client) Start(ctx context.Context) error {
 				Message: &generated.Message_StatusChanged{
 					StatusChanged: &generated.StatusChanged{
 						ClusterName: stack.Name,
-						Status:  status,
+						Status:      status,
 					},
 				},
 			}); err != nil {
@@ -339,8 +339,8 @@ func (client *client) Start(ctx context.Context) error {
 						if err := client.connectClient.SendMsg(&generated.Message{
 							Message: &generated.Message_StatusChanged{
 								StatusChanged: &generated.StatusChanged{
-									StackId: msg.DeletedStack.ClusterName,
-									Status:  generated.StackStatus_Deleted,
+									ClusterName: msg.DeletedStack.ClusterName,
+									Status:      generated.StackStatus_Deleted,
 								},
 							},
 						}); err != nil {
