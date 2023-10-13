@@ -26,3 +26,4 @@ worktrees
 
 # Ignore SDKS
 sdks
+node_modules

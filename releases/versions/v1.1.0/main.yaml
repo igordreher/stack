@@ -1,0 +1,12 @@
+---
+version: v1.1.0
+components:
+  payments: v1.0.0-alpha.3
+  search: v0.8.0
+  auth: v0.4.4
+  orchestration: v0.1.6
+  wallets: v0.4.6
+  webhooks: v0.7.1
+  stargate: v0.1.10
+  gateway: v0.1.7
+  ledger: v1.10.11

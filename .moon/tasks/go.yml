@@ -11,4 +11,4 @@ tasks:
     command: 'go mod tidy'
     platform: 'system'
     deps:
-      - 'openapi:build'
+      - 'sdk:build'

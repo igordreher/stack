@@ -1,0 +1,20 @@
+# https://taskfile.dev
+version: "3"
+
+env:
+  VERSION: v1.1.0
+
+tasks:
+  local:
+    desc: Generate OpenAPI Spec for Local
+    cmds:
+      - mkdir -p ./build
+      - npm run local
+      - cat <<< $(jq '.info.version = "local"' ./versions/local/openapi.json) > ./versions/local/openapi.json
+
+  generate:
+    desc: Generate command
+    cmds:
+      - mkdir -p ./build
+      - npm run build
+      - cat <<< $(jq '.info.version = "{{.VERSION}}"' ./versions/{{.VERSION}}/openapi.json) > ./versions/{{.VERSION}}/openapi.json

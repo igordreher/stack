@@ -1,44 +1,35 @@
-
 # https://taskfile.dev
 version: "3"
 
 env:
-  VERSION: v1.0.{{now | date "20060102"}}
+  VERSION: v1.1.0
 
 tasks:
-  sdk:build:
-    desc: Build the SDK
-    cmds:
-      - npm install
-      - npm run build
-      - cat <<< $(jq '.info.version = "{{.VERSION}}"' build/generate.json) > build/generate.json
-      - cp -R ./build/generate.json ./../docs/openapi/v2.json
-
-  sdk:generate:
+  generate:
     internal: true
     cmds:
       - rm -rf ./../sdks/{{.TARGET}}
       - mkdir -p ./../sdks/{{.TARGET}}
       - cp -r ./templates/{{.TARGET}} ./../sdks/
       - yq -y -i '.{{.TARGET}}.version = "{{.VERSION}}"' ./../sdks/{{.TARGET}}/gen.yaml
-      - speakeasy generate sdk -s ./build/generate.json -o ./../sdks/{{.TARGET}} -l {{.TARGET}}
+      - speakeasy generate sdk -s ./../releases/versions/{{.VERSION}}/openapi.json -o ./../sdks/{{.TARGET}} -l {{.TARGET}}
 
-  sdk:generate:go:
+  generate:local:
     desc: Generate all client code
     deps:
-      - task: sdk:generate
-        vars: {TARGET: "go", VERSION: "{{.VERSION}}"}
+      - task: generate
+        vars: {TARGET: "go", VERSION: "local"}
 
-  sdk:generate:all:
+  generate:all:
     desc: Generate all client code
     deps:
-      - task: sdk:generate
+      - task: generate
         vars: {TARGET: "go", VERSION: "{{.VERSION}}"}
-      - task: sdk:generate
+      - task: generate
         vars: {TARGET: "java", VERSION: "{{.VERSION}}"}
-      - task: sdk:generate
+      - task: generate
         vars: {TARGET: "php", VERSION: "{{.VERSION}}"}
-      - task: sdk:generate
+      - task: generate
         vars: {TARGET: "python", VERSION: "{{.VERSION}}"}
-      - task: sdk:generate
+      - task: generate
         vars: {TARGET: "typescript", VERSION: "{{.VERSION}}"}

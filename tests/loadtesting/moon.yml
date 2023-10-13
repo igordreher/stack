@@ -2,7 +2,7 @@ type: 'tool'
 language: 'go'
 dependsOn:
     - 'go-libs'
-    - 'openapi'
+    - 'sdk'
 
 workspace:
     inheritedTasks:

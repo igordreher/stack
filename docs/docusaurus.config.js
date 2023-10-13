@@ -56,12 +56,12 @@ const config = {
         config: path.join(__dirname, 'redocly.yaml'),
         specs: [
           {
-            spec: './openapi/v1.json',
+            spec: './openapi/v1.1.0/openapi.json',
             route: '/api/v1.x',
             id: 'api-v1',
           },
           {
-            spec: './openapi/v2.json',
+            spec: './swagger/v2.json',
             route: '/api/v2.x',
             id: 'api-v2',
           }

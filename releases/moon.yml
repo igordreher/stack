@@ -1,0 +1,11 @@
+type: 'library'
+language: 'javascript'
+
+tasks:
+    local:
+        command: 'task local'
+        platform: 'system'
+        inputs:
+            - '/components/**/openapi.yaml'
+        options:
+            runInCI: false
