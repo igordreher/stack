@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"reflect"
 
 	"github.com/formancehq/operator/apis/stack/v1beta3"
 	"github.com/formancehq/stack/components/agent/internal/grpc/generated"
@@ -261,6 +262,18 @@ func (client *client) Start(ctx context.Context) error {
 					StatusChanged: &generated.StatusChanged{
 						ClusterName: stack.Name,
 						Status:      status,
+						Versions: func() []*generated.Version {
+							version := make([]*generated.Version, 0)
+							iter := reflect.ValueOf(stack.Status.Versions).MapRange()
+							for iter.Next() {
+								version = append(version, &generated.Version{
+									ServiceName: iter.Key().String(),
+									Version:     iter.Value().String(),
+								})
+							}
+
+							return version
+						}(),
 					},
 				},
 			}); err != nil {

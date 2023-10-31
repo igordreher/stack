@@ -163,6 +163,9 @@ type StackStatus struct {
 
 	// +optional
 	LightMode bool `json:"light"`
+
+	// +optional
+	Versions *VersionsSpec `json:"versions,omitempty"`
 }
 
 //+kubebuilder:object:root=true

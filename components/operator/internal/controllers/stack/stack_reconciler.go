@@ -198,6 +198,11 @@ func (r *Reconciler) reconcileStack(ctx context.Context, stack *stackv1beta3.Sta
 		return false, err
 	}
 
+	stack.Status.Versions = &versions.Spec
+	if patchErr := r.client.Status().Update(ctx, stack); patchErr != nil {
+		return false, patchErr
+	}
+
 	return r.stackReconcilerFactory.
 		NewDeployer(stack, configuration, versions).
 		Reconcile(ctx)

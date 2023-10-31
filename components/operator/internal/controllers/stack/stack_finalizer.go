@@ -139,11 +139,11 @@ func (f *StackFinalizer) HandleFinalizer(ctx context.Context, reqName string) (b
 
 func (f *StackFinalizer) retrieveModuleTopic() []string {
 	subjectSet := collectionutils.NewSet[string]()
-	values := reflect.ValueOf(f.reconcileConf.Configuration.Spec.Services)
+	iterator := reflect.ValueOf(f.reconcileConf.Configuration.Spec.Services).MapRange()
 
 	// TODO: iterate over registered modules ?
-	for i := 0; i < values.NumField(); i++ {
-		serviceName := strings.ToLower(values.Field(i).Type().Name())
+	for iterator.Next() {
+		serviceName := strings.ToLower(iterator.Key().String())
 		mod := modules.Get(strings.ToLower(serviceName))
 		if mod == nil {
 			continue
@@ -158,7 +158,6 @@ func (f *StackFinalizer) retrieveModuleTopic() []string {
 				}
 			}
 		}
-
 	}
 
 	subjects := []string{}
