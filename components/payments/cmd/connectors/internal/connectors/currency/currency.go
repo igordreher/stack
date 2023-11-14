@@ -161,3 +161,15 @@ func GetCurrencyAndPrecisionFromAsset(asset models.Asset) (string, int, error) {
 
 	return currency, precision, nil
 }
+
+var (
+	currenciesHandled = map[string]struct{}{
+		"USD": {},
+		"EUR": {},
+	}
+)
+
+func IsCurrencyHandled(cur string) bool {
+	_, ok := currenciesHandled[strings.ToUpper(cur)]
+	return ok
+}
