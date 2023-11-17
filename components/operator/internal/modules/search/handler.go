@@ -145,6 +145,7 @@ func updateMappingJob(config modules.ReconciliationConfig) func(t *batchv1.Job) 
 		if config.Versions.IsLower("search", "v0.10.0") {
 			imageVersion = "v0.10.0"
 		}
+
 		t.Spec = batchv1.JobSpec{
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
@@ -157,6 +158,12 @@ func updateMappingJob(config modules.ReconciliationConfig) func(t *batchv1.Job) 
 					}},
 				},
 			},
+		}
+		if config.Configuration.Spec.Services.Search.Debug {
+			t.Spec.Template.Spec.Containers[0].Env = append(t.Spec.Template.Spec.Containers[0].Env, corev1.EnvVar{
+				Name:  "DEBUG",
+				Value: "true",
+			})
 		}
 	}
 }
@@ -245,6 +252,7 @@ func searchService(ctx modules.ReconciliationConfig) *modules.Service {
 			} else {
 				env = env.Append(modules.Env("ES_INDICES", stackv1beta3.DefaultESIndex))
 			}
+
 			return modules.Container{
 				Env:   env,
 				Image: modules.GetImage("search", resolveContext.Versions.Spec.Search),
@@ -410,6 +418,7 @@ func elasticSearchEnvVars(stack *stackv1beta3.Stack, configuration *stackv1beta3
 	} else {
 		ret = append(ret, modules.Env("OPENSEARCH_INDEX", stackv1beta3.DefaultESIndex))
 	}
+
 	if configuration.Spec.Broker.Kafka != nil {
 		ret = ret.Append(
 			modules.Env("KAFKA_ADDRESS", strings.Join(configuration.Spec.Broker.Kafka.Brokers, ",")),
