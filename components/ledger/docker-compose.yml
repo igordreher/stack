@@ -21,7 +21,7 @@ services:
     - postgres:/data/postgres
 
   ledger:
-    image: golang:1.19-alpine
+    image: golang:1.20-alpine
     entrypoint: go run main.go serve
     volumes:
     - .:/src
@@ -35,3 +35,11 @@ services:
       STORAGE_DRIVER: "postgres"
       STORAGE_POSTGRES_CONN_STRING: "postgresql://ledger:ledger@postgres/ledger?sslmode=disable"
       DEBUG: "true"
+
+  gateway:
+    image: kube.formance.dev:30112/formancehq/gateway:latest
+    platform: linux/amd64
+    ports:
+      - "8000:80"
+    environment:
+      NO_AUTH: "true"

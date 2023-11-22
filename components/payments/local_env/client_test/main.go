@@ -34,7 +34,6 @@ func main() {
 		return
 	}
 
-
 	fmt.Println("Creating connector")
 	installedConnectorRes, err := client.Payments.InstallConnector(context.TODO(), operations.InstallConnectorRequest{
 		Connector: shared.ConnectorMangopay,
@@ -57,6 +56,19 @@ func main() {
 		fmt.Println(installedConnectorRes.StatusCode)
 		return
 	}
+
+	info, err := client.Ledger.GetInfo(context.TODO())
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+
+	if info.StatusCode > 300 {
+		fmt.Println(info.StatusCode)
+		return
+	}
+
+	fmt.Println("INFO", info)
 
 }
 
