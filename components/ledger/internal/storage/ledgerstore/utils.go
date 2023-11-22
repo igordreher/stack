@@ -95,6 +95,46 @@ func filterAccountAddress(address, key string) string {
 	return strings.Join(parts, " and ")
 }
 
+func filterAccountAddressOnMoves(address string) string {
+	src := strings.Split(address, ":")
+
+	needSegmentCheck := false
+	for _, segment := range src {
+		needSegmentCheck = segment == ""
+		if needSegmentCheck {
+			break
+		}
+	}
+
+	if needSegmentCheck {
+		m := map[string]any{
+			fmt.Sprint(len(src)): nil,
+		}
+
+		for i, segment := range src {
+			if len(segment) == 0 {
+				continue
+			}
+			m[fmt.Sprint(i)] = segment
+		}
+
+		data, err := json.Marshal(m)
+		if err != nil {
+			panic(err)
+		}
+
+		return fmt.Sprintf("account_address_array @> '%s'", string(data))
+
+	} else {
+		data, err := json.Marshal([]string{address})
+		if err != nil {
+			panic(err)
+		}
+
+		return fmt.Sprintf("account_address = '%s'", string(data))
+	}
+}
+
 func filterAccountAddressOnTransactions(address string, source, destination bool) string {
 	src := strings.Split(address, ":")
 

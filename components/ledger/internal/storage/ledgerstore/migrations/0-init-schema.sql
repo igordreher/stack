@@ -94,8 +94,7 @@ create table moves (
     insertion_date timestamp not null,
     effective_date timestamp not null,
     post_commit_volumes volumes not null,
-    post_commit_effective_volumes volumes default null,
-    is_source boolean not null
+    post_commit_effective_volumes volumes default null
 );
 
 create type log_type as enum (
@@ -137,8 +136,7 @@ create index transactions_sources_arrays on transactions using gin (sources_arra
 create index transactions_destinations_arrays on transactions using gin (destinations_arrays jsonb_path_ops);
 
 create index moves_account_address on moves (account_address);
-create index moves_account_address_array on moves using gin (account_address_array jsonb_ops);
-create index moves_account_address_array_length on moves (jsonb_array_length(account_address_array));
+create index moves_account_address_array on moves using gin (account_address_array jsonb_path_ops);
 create index moves_date on moves (effective_date);
 create index moves_asset on moves (asset);
 create index moves_balance on moves (balance_from_volumes(post_commit_volumes));
@@ -376,12 +374,11 @@ as $$
             asset,
             transaction_id,
             amount,
-            is_source,
             account_address_array,
             post_commit_volumes,
             post_commit_effective_volumes
         ) values (_insertion_date, _effective_date, _account_address, _asset, _transaction_id,
-                  _amount, _is_source, (select to_json(string_to_array(_account_address, ':'))),
+                  _amount, explode_address(_account_address),
                   _post_commit_volumes, _effective_post_commit_volumes)
         returning seq into _seq;
 

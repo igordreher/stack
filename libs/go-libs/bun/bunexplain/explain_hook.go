@@ -19,7 +19,7 @@ func (h *explainHook) AfterQuery(ctx context.Context, event *bun.QueryEvent) {}
 func (h *explainHook) BeforeQuery(ctx context.Context, event *bun.QueryEvent) context.Context {
 
 	lowerQuery := strings.ToLower(event.Query)
-	if !strings.HasPrefix(lowerQuery, "select") {
+	if !strings.HasPrefix(lowerQuery, "select") && !strings.HasPrefix(lowerQuery, "with") {
 		return ctx
 	}
 

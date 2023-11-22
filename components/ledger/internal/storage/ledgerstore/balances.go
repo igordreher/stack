@@ -33,7 +33,7 @@ func (store *Store) GetAggregatedBalances(ctx context.Context, q GetAggregatedBa
 
 				switch address := value.(type) {
 				case string:
-					return filterAccountAddress(address, "account_address"), nil, nil
+					return filterAccountAddressOnMoves(address), nil, nil
 				default:
 					return "", nil, newErrInvalidQuery("unexpected type %T for column 'address'", address)
 				}
