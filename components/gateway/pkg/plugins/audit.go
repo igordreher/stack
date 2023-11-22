@@ -180,6 +180,8 @@ func (a *Audit) Provision(ctx caddy.Context) error {
 		return a.provisionNatsPublisher()
 	}
 
+	a.logger.Error("no publisher enabled")
+
 	return nil
 }
 
@@ -214,6 +216,9 @@ func (a *Audit) provisionNatsPublisher() error {
 		return err
 	}
 
+	if a.publisher == nil {
+		return nil
+	}
 	a.publisher, err = newNatsPublisherWithConn(
 		conn,
 		logging.NewZapLoggerAdapter(
@@ -322,6 +327,10 @@ func (a Audit) ServeHTTP(w http.ResponseWriter, r *http.Request, next caddyhttp.
 		rww.body.String(),
 	)
 
+	if a.publisher == nil {
+		return nil
+	}
+	
 	if err := a.publisher.Publish(
 		a.TopicName,
 		publish.NewMessage(

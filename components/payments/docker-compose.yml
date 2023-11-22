@@ -21,12 +21,12 @@ services:
       - ./local_env/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
 
   gateway:
-    image: caddy:2.7.5
+    image: kube.formance.dev:30112/formancehq/gateway:latest
     platform: linux/amd64
     ports:
       - "8000:80"
-    volumes:
-      - ./local_env/client_test/Caddyfile:/etc/caddy/Caddyfile
+    environment:
+      NO_AUTH: "true"
 
   payments-migrate:
     image: golang:1.20.11-alpine3.18

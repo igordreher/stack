@@ -102,6 +102,8 @@
 		issuer http://localhost/api/auth
 
 		read_key_set_max_retries 10
+
+		no_auth {$NO_AUTH:false}
 	}
 }
 
@@ -112,13 +114,13 @@
 		publisher_kafka_enabled {$PUBLISHER_KAFKA_ENABLED:false}
 		publisher_kafka_tls_enabled {$PUBLISHER_KAFKA_TLS_ENABLED:false}
 		publisher_kafka_sasl_enabled {$PUBLISHER_KAFKA_SASL_ENABLED:false}
-		publisher_kafka_sasl_username {$PUBLISHER_KAFKA_SASL_USERNAME}
-		publisher_kafka_sasl_password {$PUBLISHER_KAFKA_SASL_PASSWORD}
-		publisher_kafka_sasl_mechanism {$PUBLISHER_KAFKA_SASL_MECHANISM}
-		publisher_kafka_sasl_scram_sha_size {$PUBLISHER_KAFKA_SASL_SCRAM_SHA_SIZE}
+		publisher_kafka_sasl_username {$PUBLISHER_KAFKA_SASL_USERNAME:formance}
+		publisher_kafka_sasl_password {$PUBLISHER_KAFKA_SASL_PASSWORD:formance}
+		publisher_kafka_sasl_mechanism {$PUBLISHER_KAFKA_SASL_MECHANISM:SCRAM-SHA-256}
+		publisher_kafka_sasl_scram_sha_size {$PUBLISHER_KAFKA_SASL_SCRAM_SHA_SIZE:256}
 
 		# Nats publisher
-		publisher_nats_enabled {$PUBLISHER_NATS_ENABLED:true}
+		publisher_nats_enabled {$PUBLISHER_NATS_ENABLED:false}
 		publisher_nats_url {$PUBLISHER_NATS_URL:nats://nats:4222}
 		publisher_nats_client_id {$PUBLISHER_NATS_CLIENT_ID:gateway}
 	}
@@ -147,7 +149,7 @@ localhost:80 {
 	import handle_path_route_with_auth "/api/ledger" "127.0.0.1:3068"
 	import handle_path_route_with_auth "/api/wallets" "127.0.0.1:8081"
 	import handle_path_route_with_auth "/api/search" "127.0.0.1:8080"
-	import payments "/api/payments" "127.0.0.1:8082" "127.0.0.1:8087"
+	import payments "/api/payments" "payments-api:8080" "payments-connectors:8080"
 	import handle_path_route_with_auth "/api/webhooks" "127.0.0.1:8084"
 	import audit
 
@@ -159,8 +161,8 @@ localhost:80 {
 				auth http://127.0.0.1:8083/_info http://127.0.0.1:8083/_healthcheck
 				ledger http://127.0.0.1:3068/_info http://127.0.0.1:3068/_healthcheck
 				wallets http://127.0.0.1:8081/_info http://127.0.0.1:8081/_healthcheck
-				paymentsapi http://127.0.0.1:8082/_info http://127.0.0.1:8082/_healthcheck
-				paymentsconnectors http://127.0.0.1:8087/_info http://127.0.0.1:8087/_healthcheck
+				paymentsapi http://payments-api:8080/_info http://payments-api:8080/_healthcheck
+				paymentsconnectors http://payments-connectors:8080/_info http://payments-connectors:8080/_healthcheck
 				search http://127.0.0.1:8080/_info http://127.0.0.1:8080/_healthcheck
 				webhooks http://127.0.0.1:8084/_info http://127.0.0.1:8084/_healthcheck
 			}

@@ -32,6 +32,7 @@ type JWTAuth struct {
 
 	Issuer               string `json:"issuer,omitempty"`
 	ReadKeySetMaxRetries int    `json:"read_key_set_max_retries,omitempty"`
+	NoAuth               bool   `json:"no_auth,omitempty"`
 }
 
 func (JWTAuth) CaddyModule() caddy.ModuleInfo {
@@ -75,6 +76,12 @@ func parseAuthCaddyfile(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, er
 				if err != nil {
 					return nil, h.Errf("invalid read_key_set_max_retries")
 				}
+			case "no_auth":
+				var err error
+				ja.NoAuth, err = parseBool(h.Dispenser)
+				if err != nil {
+					return nil, h.Errf("failed to parse no_auth: %v", err)
+				}
 			default:
 				return nil, h.Errf("unrecognized option: %s", opt)
 			}
@@ -90,6 +97,9 @@ func parseAuthCaddyfile(h httpcaddyfile.Helper) (caddyhttp.MiddlewareHandler, er
 
 // Authenticate validates the JWT in the request and returns the user, if valid.
 func (ja *JWTAuth) Authenticate(w http.ResponseWriter, r *http.Request) (caddyauth.User, bool, error) {
+	if ja.NoAuth {
+		return caddyauth.User{}, true, nil
+	}
 	authHeader := r.Header.Get("authorization")
 	if authHeader == "" {
 		ja.logger.Error("no authorization header")
