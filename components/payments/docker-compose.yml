@@ -20,6 +20,19 @@ services:
     volumes:
       - ./local_env/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
 
+  gateway:
+    image: caddy:2.7.5
+    platform: linux/amd64
+    healthcheck:
+      test: [ "CMD", "curl", "-f","http://127.0.0.1:8000/" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "8000:80"
+    volumes:
+      - ./local_env/client_test/Caddyfile:/etc/caddy/Caddyfile
+
   payments-migrate:
     image: golang:1.20.11-alpine3.18
     command: go run ./ migrate up

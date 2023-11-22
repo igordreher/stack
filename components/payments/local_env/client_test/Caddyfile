@@ -1,0 +1,90 @@
+(payments) {
+	@paymentsmatcher {                                                                                                                                                                      
+        path /api/payments/payments*                                                                                                                                                          
+        method GET PATCH                                                                                                                                                                      
+    }                                                                                                                                                                                       
+    handle @paymentsmatcher {                                                                                                                                                               
+        uri strip_prefix /api/payments                                                                                                                                                        
+        reverse_proxy payments-api:8080                                                                                                                                                       
+    }                                                                                                                                                                                       
+    @accountsmatcher {                                                                                                                                                                      
+        path /api/payments/accounts*                                                                                                                                                          
+        method GET                                                                                                                                                                            
+    }                                                                                                                                                                                       
+    handle @accountsmatcher {                                                                                                                                                               
+        uri strip_prefix /api/payments                                                                                                                                                        
+        reverse_proxy payments-api:8080                                                                                                                                                       
+    }                                                                                                                                                                                       
+    @bank-accounts-readmatcher {                                                                                                                                                            
+        path /api/payments/bank-accounts*                                                                                                                                                     
+        method GET                                                                                                                                                                            
+    }                                                                                                                                                                                       
+    handle @bank-accounts-readmatcher {                                                                                                                                                     
+        uri strip_prefix /api/payments                                                                                                                                                        
+        reverse_proxy payments-api:8080                                                                                                                                                       
+    }                                                                                                                                                                                       
+    @transfer-initiations-readmatcher {                                                                                                                                                     
+        path /api/paymentstransfer-initiations*                                                                                                                                               
+        method GET                                                                                                                                                                            
+    }                                                                                                                                                                                       
+    handle @transfer-initiations-readmatcher {                                                                                                                                              
+        uri strip_prefix /api/payments                                                                                                                                                        
+        reverse_proxy payments-api:8080                                                                                                                                                       
+    }
+    @connectorsmatcher {                                                                                                                                                                    
+        path /api/payments/connectors*                                                                                                                                                        
+    }                                                                                                                                                                                       
+    handle @connectorsmatcher {                                                                                                                                                             
+        uri strip_prefix /api/payments                                                                                                                                                        
+        reverse_proxy payments-connectors:8080                                                                                                                                                
+    }                                                                                                                                                                                       
+    @configsmatcher {                                                                                                                                                                       
+        path /api/payments/configs*                                                                                                                                                           
+    }                                                                                                                                                                                       
+    handle @configsmatcher {                                                                                                                                                                
+        uri strip_prefix /api/payments                                                                                                                                                        
+        reverse_proxy payments-connectors:8080                                                                                                                                                
+    }                                                                                                                                                                                       
+    @transfer-initiations-writematcher {                                                                                                                                                    
+        path /api/payments/transfer-initiations*                                                                                                                                               
+        method POST DELETE                                                                                                                                                                    
+    }                                                                                                                                                                                       
+    handle @transfer-initiations-writematcher {                                                                                                                                             
+        uri strip_prefix /api/payments                                                                                                                                                        
+        reverse_proxy payments-connectors:8080                                                                                                                                                
+    }
+    @bank-accounts-writematcher {                                                                                                                                                           
+        path /api/payments/bank-accounts*                                                                                                                                                     
+        method POST                                                                                                                                                                           
+    }                                                                                                                                                                                       
+    handle @bank-accounts-writematcher {                                                                                                                                                    
+        uri strip_prefix /api/payments                                                                                                                                                        
+        reverse_proxy payments-connectors:8080                                                                                                                                                
+    }                                                                                                                                                                                       
+
+    @payments-connectorsmatcher {                                                                                                                                                           
+        path /api/payments*                                                                                                                                                                   
+    }                                                                                                                                                                                       
+    handle @payments-connectorsmatcher {                                                                                                                                                    
+        uri strip_prefix /api/payments                                                                                                                                                        
+        reverse_proxy payments-connectors:8080                                                                                                                                                
+    }   
+}
+
+{
+	# Many directives manipulate the HTTP handler chain and the order in which
+	# those directives are evaluated matters. So the jwtauth directive must be
+	# ordered.
+	# c.f. https://caddyserver.com/docs/caddyfile/directives#directive-order
+	# Local env dev config
+	debug
+}
+
+localhost:80 {
+	import payments
+
+	handle /api/* {
+		respond "Bad Gateway" 502
+	}
+
+}
