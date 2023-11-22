@@ -23,9 +23,20 @@ func main() {
 		panic(err)
 	}
 
-	// res, err := client.Payments.ListPayments(context.TODO(), operations.ListPaymentsRequest{})
+	res, err := client.Payments.ListPayments(context.TODO(), operations.ListPaymentsRequest{})
+	if err != nil {
+		fmt.Println(err)
+		panic(err)
+	}
+
+	if res.StatusCode > 300 {
+		fmt.Println("STATUS", res.StatusCode)
+		return
+	}
+
+
 	fmt.Println("Creating connector")
-	res, err := client.Payments.InstallConnector(context.TODO(), operations.InstallConnectorRequest{
+	installedConnectorRes, err := client.Payments.InstallConnector(context.TODO(), operations.InstallConnectorRequest{
 		Connector: shared.ConnectorMangopay,
 		ConnectorConfig: shared.ConnectorConfig{
 			MangoPayConfig: &shared.MangoPayConfig{
@@ -42,8 +53,8 @@ func main() {
 	}
 	fmt.Println("RES")
 
-	if res.StatusCode > 300 {
-		fmt.Println(res.StatusCode)
+	if installedConnectorRes.StatusCode > 300 {
+		fmt.Println(installedConnectorRes.StatusCode)
 		return
 	}
 
