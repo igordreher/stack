@@ -5,10 +5,8 @@ info:
   version: "LEDGER_VERSION"
 
 paths:
-  /v2/_info:
+  /_info:
     get:
-      tags:
-        - Ledger.V2
       summary: Show server information
       operationId: getInfo
       responses:
@@ -25,12 +23,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v2/{ledger}/_info:
+  /{ledger}/_info:
     get:
       summary: Get information about a ledger
       operationId: getLedgerInfo
-      tags:
-        - Ledger.V2
       parameters:
         - name: ledger
           in: path
@@ -53,12 +49,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v2/{ledger}/_bulk:
+  /{ledger}/_bulk:
     post:
       summary: Bulk request
       operationId: createBulk
-      tags:
-      - Ledger.V2
       parameters:
       - name: ledger
         in: path
@@ -92,12 +86,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v2/{ledger}/accounts:
+  /{ledger}/accounts:
     head:
       summary: Count the accounts from a ledger
       operationId: countAccounts
-      tags:
-        - Ledger.V2
       parameters:
         - name: ledger
           in: path
@@ -138,8 +130,6 @@ paths:
       summary: List accounts from a ledger
       description: List accounts from a ledger, sorted by address in descending order.
       operationId: listAccounts
-      tags:
-        - Ledger.V2
       parameters:
         - name: ledger
           in: path
@@ -200,12 +190,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v2/{ledger}/accounts/{address}:
+  /{ledger}/accounts/{address}:
     get:
       summary: Get account by its address
       operationId: getAccount
-      tags:
-        - Ledger.V2
       parameters:
         - name: ledger
           in: path
@@ -251,12 +239,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v2/{ledger}/accounts/{address}/metadata:
+  /{ledger}/accounts/{address}/metadata:
     post:
       summary: Add metadata to an account
       operationId: addMetadataToAccount
-      tags:
-        - Ledger.V2
       parameters:
         - name: ledger
           in: path
@@ -305,12 +291,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v2/{ledger}/accounts/{address}/metadata/{key}:
+  /{ledger}/accounts/{address}/metadata/{key}:
     delete:
       description: Delete metadata by key
       operationId: deleteAccountMetadata
-      tags:
-        - Ledger.V2
       summary: Delete metadata by key
       parameters:
         - name: ledger
@@ -338,10 +322,8 @@ paths:
           description: Key deleted
           content: {}
 
-  /v2/{ledger}/stats:
+  /{ledger}/stats:
     get:
-      tags:
-        - Ledger.V2
       operationId: readStats
       summary: Get statistics from a ledger
       description: |
@@ -368,10 +350,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v2/{ledger}/transactions:
+  /{ledger}/transactions:
     head:
-      tags:
-        - Ledger.V2
       summary: Count the transactions from a ledger
       operationId: countTransactions
       parameters:
@@ -411,8 +391,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     get:
-      tags:
-        - Ledger.V2
       summary: List transactions from a ledger
       description: List transactions from a ledger, sorted by id in descending order.
       operationId: listTransactions
@@ -477,8 +455,6 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
     post:
-      tags:
-        - Ledger.V2
       summary: Create a new transaction to a ledger
       operationId: createTransaction
       parameters:
@@ -524,10 +500,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v2/{ledger}/transactions/{id}:
+  /{ledger}/transactions/{id}:
     get:
-      tags:
-        - Ledger.V2
       summary: Get transaction from a ledger by its ID
       operationId: getTransaction
       parameters:
@@ -573,10 +547,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v2/{ledger}/transactions/{id}/metadata:
+  /{ledger}/transactions/{id}/metadata:
     post:
-      tags:
-        - Ledger.V2
       summary: Set the metadata of a transaction by its ID
       operationId: addMetadataOnTransaction
       parameters:
@@ -624,13 +596,11 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v2/{ledger}/transactions/{id}/metadata/{key}:
+  /{ledger}/transactions/{id}/metadata/{key}:
     delete:
       description: Delete metadata by key
       operationId: deleteTransactionMetadata
       summary: Delete metadata by key
-      tags:
-        - Ledger.V2
       parameters:
         - name: ledger
           in: path
@@ -660,10 +630,8 @@ paths:
           description: Key deleted
           content: { }
 
-  /v2/{ledger}/transactions/{id}/revert:
+  /{ledger}/transactions/{id}/revert:
     post:
-      tags:
-        - Ledger.V2
       operationId: revertTransaction
       summary: Revert a ledger transaction by its ID
       parameters:
@@ -702,10 +670,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-  /v2/{ledger}/aggregate/balances:
+  /{ledger}/aggregate/balances:
     get:
-      tags:
-        - Ledger.V2
       summary: Get the aggregated balances from selected accounts
       operationId: getBalancesAggregated
       parameters:
@@ -742,10 +708,8 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /v2/{ledger}/logs:
+  /{ledger}/logs:
     get:
-      tags:
-        - Ledger.V2
       summary: List the logs from a ledger
       description: List the logs from a ledger, sorted by ID in descending order.
       operationId: listLogs

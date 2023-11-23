@@ -20,34 +20,29 @@ speakeasy:
     SAVE ARTIFACT speakeasy
 
 build-final-spec:
-    FROM core+base-image
-    RUN apk update && apk add yarn nodejs npm jq
+    FROM core+builder-image
     WORKDIR /src/openapi
     RUN mkdir build
     COPY openapi/base.yaml .
-    COPY openapi/package.* .
-    RUN npm install
     WORKDIR /src/components
     FOR c IN auth ledger payments webhooks search wallets orchestration
-        COPY components/$c/openapi.yaml $c/openapi.yaml
+        COPY components/$c/openapi*.yaml $c/
     END
     WORKDIR /src/openapi
-    COPY openapi/openapi-merge.json .
-    RUN npm run build
-    LET VERSION=$(date +%Y%m%d)
-    RUN jq '.info.version = "v1.0.${VERSION}"' build/generate.json > build/generate-with-version.json
-    SAVE ARTIFACT build/generate-with-version.json
-    SAVE ARTIFACT build/generate-with-version.json AS LOCAL openapi/build/generate.json
+    COPY openapi/main.go openapi/go.* .
+    COPY --dir openapi/cmd/ .
+    RUN go run main.go
+    SAVE ARTIFACT build/generate.yaml AS LOCAL openapi/build/generate.yaml
 
 build-sdk:
     FROM core+base-image
     WORKDIR /src
     RUN apk update && apk add yq
     COPY (+speakeasy/speakeasy) /bin/speakeasy
-    COPY (+build-final-spec/generate-with-version.json) final-spec.json
+    COPY (+build-final-spec/generate.yaml) final-spec.yaml
     ARG LANG=go
     COPY --dir openapi/templates/${LANG} sdks/${LANG}
-    RUN --secret SPEAKEASY_API_KEY speakeasy generate sdk -s ./final-spec.json -o ./sdks/${LANG} -l ${LANG}
+    RUN --secret SPEAKEASY_API_KEY speakeasy generate sdk -s ./final-spec.yaml -o ./sdks/${LANG} -l ${LANG}
     SAVE ARTIFACT sdks/${LANG} AS LOCAL ./sdks/${LANG}
     SAVE ARTIFACT sdks/${LANG}
 
