@@ -54,7 +54,8 @@ func (g module) Versions() map[string]modules.Version {
 					},
 					Liveness:         modules.LivenessDisable,
 					LivenessEndpoint: "nats://" + ctx.Configuration.Spec.Broker.Nats.URL + "/healthz",
-					Annotations:      ctx.Configuration.Spec.Services.Gateway.Annotations.Service,
+					Topics:      &modules.Topics{Name: "audit"},
+          Annotations:      ctx.Configuration.Spec.Services.Gateway.Annotations.Service,
 					Configs: func(resolveContext modules.ServiceInstallConfiguration) modules.Configs {
 						return modules.Configs{
 							"config": modules.Config{
