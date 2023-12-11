@@ -22,17 +22,24 @@ type Test struct {
 	servicesToRoute map[string][]routing
 	httpServer      *httptest.Server
 	httpTransport   http.RoundTripper
+	gateway         *gateway
 }
 
 func (test *Test) setup() error {
-	gateway := newGateway(test)
-	test.httpServer = httptest.NewServer(gateway)
+	test.gateway = newGateway(test)
+	if err := test.gateway.run(); err != nil {
+		return err
+	}
+	test.httpServer = httptest.NewServer(test.gateway)
 	test.httpTransport = httpclient.NewDebugHTTPTransport(http.DefaultTransport)
 
 	return nil
 }
 
 func (test *Test) tearDown() error {
+	if err := test.gateway.stop(); err != nil {
+		return err
+	}
 	if test.httpServer != nil {
 		test.httpServer.Close()
 	}

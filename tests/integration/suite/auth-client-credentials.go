@@ -69,7 +69,7 @@ var _ = WithModules([]*Module{modules.Auth}, func() {
 					Expect(err).To(BeNil())
 					Expect(token).NotTo(BeNil())
 				})
-				It("should be ok", func() {
+				FIt("should be ok", func() {
 					accessTokenClaims := &oidc.AccessTokenClaims{}
 					_, err = oidc.ParseToken(token.AccessToken, accessTokenClaims)
 					Expect(err).To(Succeed())

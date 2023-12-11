@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"fmt"
 	formance "github.com/formancehq/formance-sdk-go"
 	"github.com/formancehq/stack/libs/go-libs/logging"
 	"github.com/oauth2-proxy/mockoidc"
@@ -60,6 +61,7 @@ func OIDCServer() *mockoidc.MockOIDC {
 }
 
 var _ = BeforeSuite(func() {
+	fmt.Println("start suite")
 	ctx = context.TODO()
 
 	l := logrus.New()
