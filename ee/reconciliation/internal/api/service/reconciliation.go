@@ -97,7 +97,16 @@ func (s *Service) Reconciliation(ctx context.Context, policyID string, req *Reco
 				break
 			}
 
-			if paymentBalance.Cmp(ledgerBalance) != 0 {
+			delta := new(big.Int).Add(
+				// conventionally positive
+				paymentBalance,
+				// conventionally negative
+				ledgerBalance,
+			)
+
+			// we expect the delta to be positive or zero,
+			// indicating that the pool balance can cover the ledger balance
+			if delta.Sign() < 0 {
 				res.Status = models.ReconciliationNotOK
 				res.Error = fmt.Sprintf("different balance for asset %s", paymentAsset)
 				break
