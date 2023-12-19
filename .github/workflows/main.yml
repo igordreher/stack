@@ -136,9 +136,9 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    needs:
-      - GoReleaser
-      - Main
+#    needs:
+#      - GoReleaser
+#      - Main
     steps:
       - uses: earthly/actions-setup@v1
         with:
@@ -187,9 +187,9 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    needs:
-      - GoReleaser
-      - Main
+#    needs:
+#      - GoReleaser
+#      - Main
     steps:
       - uses: earthly/actions-setup@v1
         with:
