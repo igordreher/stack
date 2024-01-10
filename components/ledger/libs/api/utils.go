@@ -16,6 +16,14 @@ const (
 	ErrorInternal     = "INTERNAL"
 )
 
+type ErrorResponseOpt func(*ErrorResponse)
+
+func WithMessage(message string) ErrorResponseOpt {
+	return func(response *ErrorResponse) {
+		response.ErrorMessage = message
+	}
+}
+
 func writeJSON(w http.ResponseWriter, statusCode int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
@@ -26,11 +34,17 @@ func writeJSON(w http.ResponseWriter, statusCode int, v any) {
 	}
 }
 
-func NotFound(w http.ResponseWriter) {
-	writeJSON(w, http.StatusNotFound, ErrorResponse{
+func NotFound(w http.ResponseWriter, opts ...ErrorResponseOpt) {
+	err := ErrorResponse{
 		ErrorCode:    ErrorCodeNotFound,
-		ErrorMessage: "resource not found",
-	})
+		ErrorMessage: "ressource not found",
+	}
+
+	for _, opt := range opts {
+		opt(&err)
+	}
+
+	writeJSON(w, http.StatusNotFound, err)
 }
 
 func NoContent(w http.ResponseWriter) {
